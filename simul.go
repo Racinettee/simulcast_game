@@ -10,6 +10,8 @@ import (
 	ebi "github.com/hajimehoshi/ebiten/v2"
 	ebiutil "github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
+	tiled "github.com/lafriks/go-tiled"
+	"github.com/lafriks/go-tiled/render"
 )
 
 const (
@@ -32,8 +34,13 @@ const (
 
 var (
 	runnerImage *ebi.Image
+	tilesImage  *ebi.Image
+)
 
-	tilesImage *ebi.Image
+var (
+	tileMap    *tiled.Map
+	mapImage   *ebi.Image
+	mapDrawOps ebi.DrawImageOptions
 )
 
 func init() {
@@ -46,6 +53,12 @@ func init() {
 		log.Fatal(err)
 	}
 	tilesImage = ebi.NewImageFromImage(img)
+
+	tileMap, _ = tiled.LoadFile("tilemaps/simple_map.tmx")
+	renderer, _ := render.NewRenderer(tileMap)
+	renderer.RenderVisibleLayers()
+	mapImage = ebi.NewImageFromImage(renderer.Result)
+	renderer.Clear()
 }
 
 type Game struct {
@@ -61,21 +74,10 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebi.Image) {
-	// Draw each tile with each DrawImage call.
-	// As the source images of all DrawImage calls are always same,
-	// this rendering is done very efficiently.
-	// For more detail, see https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#Image.DrawImage
-	const xNum = screenWidth / tileSize
-	for _, l := range g.layers {
-		for i, t := range l {
-			op := &ebi.DrawImageOptions{}
-			op.GeoM.Translate(float64((i%xNum)*tileSize), float64((i/xNum)*tileSize))
+	mapDrawOps.GeoM.Reset()
+	mapDrawOps.GeoM.Translate(0, 0)
+	screen.DrawImage(mapImage, &mapDrawOps)
 
-			sx := (t % tileXNum) * tileSize
-			sy := (t / tileXNum) * tileSize
-			screen.DrawImage(tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebi.Image), op)
-		}
-	}
 	op := &ebi.DrawImageOptions{}
 	op.GeoM.Translate(-float64(frameWidth)/2, -float64(frameHeight)/2)
 	op.GeoM.Translate(screenWidth/2, screenHeight/2)
