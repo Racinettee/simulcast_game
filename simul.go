@@ -1,36 +1,22 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"image"
 	_ "image/png"
 	"log"
 
 	ebi "github.com/hajimehoshi/ebiten/v2"
 	ebiutil "github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
 	tiled "github.com/lafriks/go-tiled"
 	"github.com/lafriks/go-tiled/render"
 
 	"github.com/Racinettee/simul/pkg/camera"
+	"github.com/Racinettee/simul/pkg/player"
 )
 
 const (
 	screenWidth  = 240
 	screenHeight = 240
-)
-
-const (
-	frameOX     = 0
-	frameOY     = 32
-	frameWidth  = 32
-	frameHeight = 32
-	frameNum    = 8
-)
-
-var (
-	runnerImage *ebi.Image
 )
 
 var (
@@ -51,42 +37,29 @@ func init() {
 }
 
 type Game struct {
-	camera camera.Camera
+	camera camera.FollowCam
+	player player.PlayerImpl
 	count  int
 }
 
 func (g *Game) Update() error {
 	g.count++
 
-	if ebi.IsKeyPressed(ebi.KeyA) {
-		g.camera.Position[0] -= 1
-	}
+	g.player.Update()
 
-	if ebi.IsKeyPressed(ebi.KeyD) {
-		g.camera.Position[0] += 1
-	}
-
-	if ebi.IsKeyPressed(ebi.KeyW) {
-		g.camera.Position[1] -= 1
-	}
-
-	if ebi.IsKeyPressed(ebi.KeyS) {
-		g.camera.Position[1] += 1
-	}
+	g.camera.Update()
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebi.Image) {
+	g.camera.Surface.Clear()
 	// Map
-	g.camera.Render(mapImage, screen)
+	g.camera.Surface.DrawImage(mapImage, g.camera.GetTranslation(0, 0))
 	// Character
-	op := ebi.DrawImageOptions{}
-	op.GeoM.Translate(-float64(frameWidth)/2, -float64(frameHeight)/2)
-	op.GeoM.Translate(screenWidth/2, screenHeight/2)
-	i := (g.count / 5) % frameNum
-	sx, sy := frameOX+i*frameWidth, frameOY
-	screen.DrawImage(runnerImage.SubImage(image.Rect(sx, sy, sx+frameWidth, sy+frameHeight)).(*ebi.Image), &op)
+	g.player.Render(&g.camera)
+	// Publish
+	g.camera.Blit(screen)
 
 	ebiutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebi.CurrentTPS()))
 }
@@ -96,12 +69,11 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
-	img, _, err := image.Decode(bytes.NewReader(images.Runner_png))
-	if err != nil {
-		log.Fatal(err)
+	g := &Game{
+		camera: camera.NewFollowCam(screenWidth, screenHeight, 0, 0, 1, 0),
 	}
-	runnerImage = ebi.NewImageFromImage(img)
-	g := &Game{}
+	g.player.SceneEnter()
+	g.camera.Followee = &g.player
 
 	ebi.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebi.SetWindowTitle("Tiles (Ebiten Demo)")
