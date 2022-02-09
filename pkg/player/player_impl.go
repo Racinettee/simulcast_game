@@ -53,7 +53,8 @@ func (player *PlayerImpl) Render(renderer component.Renderer) {
 }
 
 // Behavior
-func (player *PlayerImpl) Update() {
+func (player *PlayerImpl) Update(tick int) {
+	player.count = tick
 	if ebi.IsKeyPressed(ebi.KeyA) {
 		player.pos[0] -= 1
 	}

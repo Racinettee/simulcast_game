@@ -1,5 +1,5 @@
 package component
 
 type Behavior interface {
-	Update()
+	Update(tick int)
 }
