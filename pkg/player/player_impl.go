@@ -8,6 +8,7 @@ import (
 	"github.com/Racinettee/simul/pkg/component"
 	ebi "github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
+	"github.com/solarlune/resolv"
 	"golang.org/x/image/math/f64"
 )
 
@@ -19,15 +20,11 @@ const (
 	frameNum    = 8
 )
 
-const (
-	screenWidth  = 240
-	screenHeight = 240
-)
-
 type PlayerImpl struct {
-	count       int
 	pos         f64.Vec2
+	Body        resolv.Shape
 	runnerImage *ebi.Image
+	count       int
 }
 
 // Positioned
@@ -39,6 +36,7 @@ func (player *PlayerImpl) SceneEnter() {
 		log.Fatal(err)
 	}
 	player.runnerImage = ebi.NewImageFromImage(img)
+	player.Body = resolv.NewRectangle(player.pos[0], player.pos[0], frameWidth, frameHeight)
 }
 
 // Renderable
@@ -46,8 +44,7 @@ func (player *PlayerImpl) Render(renderer component.Renderer) {
 	// Character
 	op := renderer.GetTranslation(player.pos[0], player.pos[1])
 	op.GeoM.Translate(-float64(frameWidth)/2, -float64(frameHeight)/2)
-	//op.GeoM.Translate(screenWidth/2, screenHeight/2)
-	i := (player.count / 5) % 8 //frameNum
+	i := (player.count / 5) % frameNum
 	sx, sy := frameOX+i*frameWidth, frameOY
 	renderer.RenderItem(player.runnerImage.SubImage(image.Rect(sx, sy, sx+frameWidth, sy+frameHeight)).(*ebi.Image), op)
 }

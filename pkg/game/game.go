@@ -1,12 +1,16 @@
 package game
 
 import (
+	"fmt"
+
 	ebi "github.com/hajimehoshi/ebiten/v2"
 	"github.com/lafriks/go-tiled"
 	"github.com/lafriks/go-tiled/render"
+	"github.com/solarlune/resolv"
 
 	"github.com/Racinettee/simul/pkg/camera"
 	"github.com/Racinettee/simul/pkg/player"
+	"github.com/Racinettee/simul/pkg/tiles"
 )
 
 const (
@@ -17,6 +21,9 @@ const (
 var (
 	tileMap  *tiled.Map
 	mapImage *ebi.Image
+
+	// Collision stuff
+	space *resolv.Space
 )
 
 func init() {
@@ -25,10 +32,16 @@ func init() {
 	// If you use Go 1.16 or newer, it is strongly recommended to use //go:embed to embed the image file.
 	// See https://pkg.go.dev/embed for more details.
 	tileMap, _ = tiled.LoadFile("tilemaps/simple_map.tmx")
+	space = resolv.NewSpace(tileMap.TileWidth*tileMap.Width,
+		tileMap.TileHeight*tileMap.Height, tileMap.TileWidth, tileMap.TileHeight)
+
+	//fmt.Printf("%+v\n", tileMap.Tilesets[0])
 	renderer, _ := render.NewRenderer(tileMap)
 	renderer.RenderVisibleLayers()
 	mapImage = ebi.NewImageFromImage(renderer.Result)
-	renderer.Clear()
+	//renderer.Clear()
+	collisionObjects := tiles.CollisionObjectsOfTileLayer(tileMap.Layers[0])
+	fmt.Printf("%+v\n", collisionObjects[0])
 }
 
 type Game struct {
