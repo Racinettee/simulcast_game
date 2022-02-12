@@ -4,9 +4,8 @@
   <image source="simple_tileset.png" width="32" height="64"/>
   <tile id="0">
    <objectgroup draworder="index" id="2">
-    <object id="1" x="0" y="7.99036">
-     <polygon points="0,0 0,-5.98289 1.99957,-7.99036 7.99036,-7.99827 7.99036,-6.99453 2.88475,-6.99453 1.00374,-5.02658 0.987928,0"/>
-    </object>
+    <object id="2" x="0.999848" y="-0.0109873" width="7.00993" height="1.9997"/>
+    <object id="3" x="0.0219747" y="1.97772" width="1.97772" height="5.99909"/>
    </objectgroup>
   </tile>
   <tile id="1">
@@ -21,9 +20,8 @@
   </tile>
   <tile id="8">
    <objectgroup draworder="index" id="2">
-    <object id="1" x="0.0109873" y="0.0219747">
-     <polygon points="0,0 0,5.96613 1.97772,7.95484 7.9878,7.95484 7.9878,6.95499 2.97757,6.95499 0.988861,4.99924 0.988861,-0.0109873"/>
-    </object>
+    <object id="2" x="0.0109873" y="0" width="1.98871" height="6.99894"/>
+    <object id="4" x="1.98871" y="5.9881" width="6.02106" height="1.9997"/>
    </objectgroup>
   </tile>
  </tileset>

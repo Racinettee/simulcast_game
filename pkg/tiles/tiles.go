@@ -1,8 +1,6 @@
 package tiles
 
 import (
-	"fmt"
-
 	"github.com/lafriks/go-tiled"
 	"github.com/solarlune/resolv"
 )
@@ -24,7 +22,6 @@ func CollisionObjectsOfTileLayer(layer *tiled.Layer) []*resolv.Object {
 					for _, object := range objectGroups[0].Objects {
 						// First we will check for polygons
 						if len(object.Polygons) != 0 {
-							tileRect := tile.GetTileRect()
 							polygon := object.Polygons[0]
 							//fmt.Printf("%+v\n", polygon.Points)
 							points := *polygon.Points
@@ -34,8 +31,7 @@ func CollisionObjectsOfTileLayer(layer *tiled.Layer) []*resolv.Object {
 								polyList[j] = points[i].X
 								polyList[j+1] = points[i].Y
 							}
-							//fmt.Printf("%v\n", polyList)
-							newObject := resolv.NewObject(float64(x), float64(y), float64(tileRect.Dx()), float64(tileRect.Dy()))
+							newObject := resolv.NewObject(float64(x), float64(y), 8, 8)
 							newObject.SetShape(resolv.NewConvexPolygon(polyList...))
 							result = append(result, newObject)
 						} else if len(object.Ellipses) != 0 {
@@ -43,10 +39,7 @@ func CollisionObjectsOfTileLayer(layer *tiled.Layer) []*resolv.Object {
 							newObject.SetShape(resolv.NewCircle(0, 0, object.Width))
 							result = append(result, newObject)
 						} else {
-							tileRect := tile.GetTileRect()
-							newObject := resolv.NewObject(float64(x), float64(y), float64(tileRect.Dx()), float64(tileRect.Dy()))
-							newObject.SetShape(resolv.NewRectangle(0, 0, float64(tileRect.Dx()), float64(tileRect.Dy())))
-							fmt.Printf("Rectangle...")
+							newObject := resolv.NewObject(float64(x)+object.X, float64(y)+object.Y, object.Width, object.Height)
 							result = append(result, newObject)
 						}
 					}
