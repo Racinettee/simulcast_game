@@ -59,7 +59,7 @@ func (g *Game) Init() {
 	_, err := toml.DecodeFile("simul_conf.toml", &g.Config)
 
 	if err != nil {
-		log.Panic("Failed to load configuration")
+		log.Printf("Failed to load configuration")
 	}
 
 	g.camera = camera.NewFollowCam(screenWidth, screenHeight, 0, 0, 1, 0)
@@ -85,14 +85,11 @@ func (g *Game) Draw(screen *ebi.Image) {
 	// Character
 	g.player.Render(&g.camera)
 
-	//ebiutil.DrawLine(g.camera.Surface, g.player.Body.)
 	if g.Config.DrawCollisionShapes {
 		g.DrawCollisions()
 	}
 	// Publish
 	g.camera.Blit(screen)
-
-	//ebiutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebi.CurrentTPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
