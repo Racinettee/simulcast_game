@@ -2,7 +2,9 @@ package game
 
 import (
 	"image/color"
+	"log"
 
+	"github.com/BurntSushi/toml"
 	ebi "github.com/hajimehoshi/ebiten/v2"
 	ebiutil "github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/lafriks/go-tiled"
@@ -50,9 +52,16 @@ type Game struct {
 	camera camera.FollowCam
 	player player.PlayerImpl
 	count  int
+	Config Config
 }
 
 func (g *Game) Init() {
+	_, err := toml.DecodeFile("simul_conf.toml", &g.Config)
+
+	if err != nil {
+		log.Panic("Failed to load configuration")
+	}
+
 	g.camera = camera.NewFollowCam(screenWidth, screenHeight, 0, 0, 1, 0)
 	g.camera.Followee = &g.player
 	g.player.SceneEnter()
@@ -76,6 +85,21 @@ func (g *Game) Draw(screen *ebi.Image) {
 	// Character
 	g.player.Render(&g.camera)
 
+	//ebiutil.DrawLine(g.camera.Surface, g.player.Body.)
+	if g.Config.DrawCollisionShapes {
+		g.DrawCollisions()
+	}
+	// Publish
+	g.camera.Blit(screen)
+
+	//ebiutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebi.CurrentTPS()))
+}
+
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return screenWidth, screenHeight
+}
+
+func (g *Game) DrawCollisions() {
 	pX, pY := g.camera.GetScreenCoords(g.player.Body.X, g.player.Body.Y)
 	pX -= frameWidth / 2
 	pY -= frameHeight / 2
@@ -100,14 +124,4 @@ func (g *Game) Draw(screen *ebi.Image) {
 		}
 
 	}
-	//ebiutil.DrawLine(g.camera.Surface, g.player.Body.)
-
-	// Publish
-	g.camera.Blit(screen)
-
-	//ebiutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebi.CurrentTPS()))
-}
-
-func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
 }
