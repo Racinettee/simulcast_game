@@ -1,9 +1,10 @@
 package game
 
 import (
-	"fmt"
+	"image/color"
 
 	ebi "github.com/hajimehoshi/ebiten/v2"
+	ebiutil "github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/lafriks/go-tiled"
 	"github.com/lafriks/go-tiled/render"
 	"github.com/solarlune/resolv"
@@ -16,6 +17,8 @@ import (
 const (
 	screenWidth  = 240
 	screenHeight = 240
+	frameWidth   = 32
+	frameHeight  = 32
 )
 
 var (
@@ -33,15 +36,14 @@ func init() {
 	// See https://pkg.go.dev/embed for more details.
 	tileMap, _ = tiled.LoadFile("tilemaps/simple_map.tmx")
 	space = resolv.NewSpace(tileMap.TileWidth*tileMap.Width,
-		tileMap.TileHeight*tileMap.Height, tileMap.TileWidth, tileMap.TileHeight)
+		tileMap.TileHeight*tileMap.Height, tileMap.TileWidth/4, tileMap.TileHeight/4)
 
 	//fmt.Printf("%+v\n", tileMap.Tilesets[0])
 	renderer, _ := render.NewRenderer(tileMap)
 	renderer.RenderVisibleLayers()
 	mapImage = ebi.NewImageFromImage(renderer.Result)
-	//renderer.Clear()
 	collisionObjects := tiles.CollisionObjectsOfTileLayer(tileMap.Layers[0])
-	fmt.Printf("%+v\n", collisionObjects[0])
+	space.Add(collisionObjects...)
 }
 
 type Game struct {
@@ -54,6 +56,7 @@ func (g *Game) Init() {
 	g.camera = camera.NewFollowCam(screenWidth, screenHeight, 0, 0, 1, 0)
 	g.camera.Followee = &g.player
 	g.player.SceneEnter()
+	space.Add(g.player.Body)
 }
 
 func (g *Game) Update() error {
@@ -72,6 +75,33 @@ func (g *Game) Draw(screen *ebi.Image) {
 	g.camera.Surface.DrawImage(mapImage, g.camera.GetTranslation(0, 0))
 	// Character
 	g.player.Render(&g.camera)
+
+	pX, pY := g.camera.GetScreenCoords(g.player.Body.X, g.player.Body.Y)
+	pX -= frameWidth / 2
+	pY -= frameHeight / 2
+	// Draw collisions
+	objects := space.Objects()
+	for _, obj := range objects {
+		switch shape := obj.Shape.(type) {
+		case *resolv.ConvexPolygon:
+			points := shape.Points
+			sX, sY := g.camera.GetScreenCoords(obj.X, obj.Y)
+
+			for i := 0; i < len(points)-1; i += 1 {
+				pX, pY := sX+points[i].X(), sY+points[i].Y()
+				pX2, pY2 := sX+points[i+1].X(), sY+points[i+1].Y()
+
+				ebiutil.DrawLine(g.camera.Surface, pX, pY,
+					pX2, pY2, color.RGBA{255, 125, 125, 100})
+			}
+		default:
+			sX, sY := g.camera.GetScreenCoords(obj.X, obj.Y)
+			ebiutil.DrawRect(g.camera.Surface, sX, sY, obj.W, obj.H, color.RGBA{255, 125, 125, 100})
+		}
+
+	}
+	//ebiutil.DrawLine(g.camera.Surface, g.player.Body.)
+
 	// Publish
 	g.camera.Blit(screen)
 

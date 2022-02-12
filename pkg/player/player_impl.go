@@ -2,6 +2,7 @@ package player
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"log"
 
@@ -22,7 +23,7 @@ const (
 
 type PlayerImpl struct {
 	pos         f64.Vec2
-	Body        resolv.Shape
+	Body        *resolv.Object
 	runnerImage *ebi.Image
 	count       int
 }
@@ -31,12 +32,14 @@ type PlayerImpl struct {
 func (player *PlayerImpl) Pos() f64.Vec2 { return player.pos }
 
 func (player *PlayerImpl) SceneEnter() {
+	player.pos[0] = 50
+	player.pos[1] = 50
 	img, _, err := image.Decode(bytes.NewReader(images.Runner_png))
 	if err != nil {
 		log.Fatal(err)
 	}
 	player.runnerImage = ebi.NewImageFromImage(img)
-	player.Body = resolv.NewRectangle(player.pos[0], player.pos[0], frameWidth, frameHeight)
+	player.Body = resolv.NewObject(player.pos[0]-(frameWidth/2), player.pos[1]-(frameHeight/2), frameWidth, frameHeight)
 }
 
 // Renderable
@@ -52,19 +55,33 @@ func (player *PlayerImpl) Render(renderer component.Renderer) {
 // Behavior
 func (player *PlayerImpl) Update(tick int) {
 	player.count = tick
+
+	hV := float64(0)
+	vV := float64(0)
+
 	if ebi.IsKeyPressed(ebi.KeyA) {
-		player.pos[0] -= 1
+		hV -= 1
 	}
 
 	if ebi.IsKeyPressed(ebi.KeyD) {
-		player.pos[0] += 1
+		hV += 1
 	}
 
 	if ebi.IsKeyPressed(ebi.KeyW) {
-		player.pos[1] -= 1
+		vV -= 1
 	}
 
 	if ebi.IsKeyPressed(ebi.KeyS) {
-		player.pos[1] += 1
+		vV += 1
 	}
+
+	if collision := player.Body.Check(hV, vV); collision != nil {
+		hV, vV = 0, 0
+		fmt.Printf("Holay\n")
+	}
+
+	player.pos[0] += hV
+	player.pos[1] += vV
+	player.Body.X, player.Body.Y = player.pos[0]-(frameWidth/2), player.pos[1]-(frameHeight/2)
+	player.Body.Update()
 }

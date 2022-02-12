@@ -19,10 +19,17 @@
     <object id="1" x="0" y="0" width="1.98871" height="7.97681"/>
    </objectgroup>
   </tile>
+  <tile id="8">
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="0.0109873" y="0.0219747">
+     <polygon points="0,0 0,5.96613 1.97772,7.95484 7.9878,7.95484 7.9878,6.95499 2.97757,6.95499 0.988861,4.99924 0.988861,-0.0109873"/>
+    </object>
+   </objectgroup>
+  </tile>
  </tileset>
  <layer id="1" name="Tile Layer 1" width="100" height="100">
   <data encoding="base64" compression="zlib">
-   eJzt0aEKACAQBcETRAz3/9+rzWx7YcL0hR1VtYg1AxrwIk1fO6CDx488nmTogAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+HTvW6mo=
+   eJzt18EKgkAUQFGNjAL//3urRSRFRJu8MGdxGNw9uDx15mmaDh+c+Lvl5fkYmGlk2x5a7O/RY705B+YZ3XY/9Njfvcc8Pb/fmuzf436ugVl4/7+i0cOdo2HRIsX7qkWPFj1a9GjRo+Vbjzkw40jsR4seLdsel8A8o7MfLXq06NGiR4seLXq06NGiR4seAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL+5AiqC6hw=
   </data>
  </layer>
  <layer id="2" name="Tile Layer 2" width="100" height="100">
