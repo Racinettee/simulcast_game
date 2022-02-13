@@ -9,7 +9,6 @@ func CollisionObjectsOfTileLayer(layer *tiled.Layer) []*resolv.Object {
 	result := make([]*resolv.Object, 0)
 	// Using the ID from each tile, and associating it back to its tileset, let us get the polygons
 	for tileNo, tile := range layer.Tiles {
-		//fmt.Printf("%+v\n", tile)
 		tileset := tile.Tileset
 		// Find if this tile has any data in the tileset to speak of
 		for _, tilesetTile := range tileset.Tiles {

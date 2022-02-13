@@ -40,7 +40,6 @@ func init() {
 	space = resolv.NewSpace(tileMap.TileWidth*tileMap.Width,
 		tileMap.TileHeight*tileMap.Height, tileMap.TileWidth/4, tileMap.TileHeight/4)
 
-	//fmt.Printf("%+v\n", tileMap.Tilesets[0])
 	renderer, _ := render.NewRenderer(tileMap)
 	renderer.RenderVisibleLayers()
 	mapImage = ebi.NewImageFromImage(renderer.Result)

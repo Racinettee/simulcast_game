@@ -1,14 +1,14 @@
 package player
 
 import (
-	"bytes"
 	"fmt"
 	"image"
 	"log"
 
 	"github.com/Racinettee/simul/pkg/component"
 	ebi "github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
+	ebiutil "github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	ase "github.com/solarlune/goaseprite"
 	"github.com/solarlune/resolv"
 	"golang.org/x/image/math/f64"
 )
@@ -22,10 +22,10 @@ const (
 )
 
 type PlayerImpl struct {
-	pos         f64.Vec2
-	Body        *resolv.Object
-	runnerImage *ebi.Image
-	count       int
+	pos    f64.Vec2
+	Body   *resolv.Object
+	Img    *ebi.Image
+	Sprite *ase.File
 }
 
 // Positioned
@@ -34,12 +34,14 @@ func (player *PlayerImpl) Pos() f64.Vec2 { return player.pos }
 func (player *PlayerImpl) SceneEnter() {
 	player.pos[0] = 50
 	player.pos[1] = 50
-	img, _, err := image.Decode(bytes.NewReader(images.Runner_png))
+	player.Sprite = ase.Open("sprites/player/Chica.json")
+	var err error
+	player.Img, _, err = ebiutil.NewImageFromFile("sprites/player/" + player.Sprite.ImagePath)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
-	player.runnerImage = ebi.NewImageFromImage(img)
 	player.Body = resolv.NewObject(player.pos[0]-(frameWidth/2), player.pos[1]-(frameHeight/2), frameWidth, frameHeight)
+	player.Sprite.Play("IdleDown")
 }
 
 // Renderable
@@ -47,14 +49,12 @@ func (player *PlayerImpl) Render(renderer component.Renderer) {
 	// Character
 	op := renderer.GetTranslation(player.pos[0], player.pos[1])
 	op.GeoM.Translate(-float64(frameWidth)/2, -float64(frameHeight)/2)
-	i := (player.count / 5) % frameNum
-	sx, sy := frameOX+i*frameWidth, frameOY
-	renderer.RenderItem(player.runnerImage.SubImage(image.Rect(sx, sy, sx+frameWidth, sy+frameHeight)).(*ebi.Image), op)
+	renderer.RenderItem(player.Img.SubImage(image.Rect(player.Sprite.CurrentFrameCoords())).(*ebi.Image), op)
 }
 
 // Behavior
 func (player *PlayerImpl) Update(tick int) {
-	player.count = tick
+	player.Sprite.Update(float32(.5 / 60.0))
 
 	hV := float64(0)
 	vV := float64(0)
