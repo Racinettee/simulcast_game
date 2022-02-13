@@ -8,6 +8,7 @@ import (
 	"github.com/Racinettee/simul/pkg/component"
 	ebi "github.com/hajimehoshi/ebiten/v2"
 	ebiutil "github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	ase "github.com/solarlune/goaseprite"
 	"github.com/solarlune/resolv"
 	"golang.org/x/image/math/f64"
@@ -42,6 +43,12 @@ func (player *PlayerImpl) SceneEnter() {
 	}
 	player.Body = resolv.NewObject(player.pos[0]-(frameWidth/2), player.pos[1]-(frameHeight/2), frameWidth, frameHeight)
 	player.Sprite.Play("IdleDown")
+
+	player.Sprite.OnTagExit = func(tag *ase.Tag) {
+		if tag.Name == "WalkDown" {
+			fmt.Println("Walk down finished")
+		}
+	}
 }
 
 // Renderable
@@ -73,6 +80,10 @@ func (player *PlayerImpl) Update(tick int) {
 
 	if ebi.IsKeyPressed(ebi.KeyS) {
 		vV += 1
+		player.Sprite.Play("WalkDown")
+	}
+	if inpututil.IsKeyJustReleased(ebi.KeyS) {
+		player.Sprite.Play("IdleDown")
 	}
 
 	if collision := player.Body.Check(hV, vV); collision != nil {
