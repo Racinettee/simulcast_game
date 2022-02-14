@@ -45,9 +45,7 @@ func (player *PlayerImpl) SceneEnter() {
 	player.Sprite.Play("IdleDown")
 
 	player.Sprite.OnTagExit = func(tag *ase.Tag) {
-		if tag.Name == "WalkDown" {
-			fmt.Println("Walk down finished")
-		}
+		fmt.Printf("%v exited\n", tag.Name)
 	}
 }
 
