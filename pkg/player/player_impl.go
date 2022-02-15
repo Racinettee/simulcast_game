@@ -44,11 +44,7 @@ func (player *PlayerImpl) SceneEnter() {
 	player.Body = resolv.NewObject(player.pos[0]-(frameWidth/2), player.pos[1]-(frameHeight/2), frameWidth, frameHeight)
 	player.Sprite.Play("IdleDown")
 
-	player.Sprite.OnTagExit = func(tag *ase.Tag) {
-		if tag.Name == "WalkDown" {
-			fmt.Println("Walk down finished")
-		}
-	}
+	player.Sprite.OnTagExit = player.OnAnimExit()
 }
 
 // Renderable
@@ -88,11 +84,16 @@ func (player *PlayerImpl) Update(tick int) {
 
 	if collision := player.Body.Check(hV, vV); collision != nil {
 		hV, vV = 0, 0
-		fmt.Printf("Holay\n")
 	}
 
 	player.pos[0] += hV
 	player.pos[1] += vV
 	player.Body.X, player.Body.Y = player.pos[0]-(frameWidth/2), player.pos[1]-(frameHeight/2)
 	player.Body.Update()
+}
+
+func (player *PlayerImpl) OnAnimExit() func(*ase.Tag) {
+	return func(tag *ase.Tag) {
+		fmt.Printf("Player: %+v - %v exited\n", player, tag.Name)
+	}
 }
