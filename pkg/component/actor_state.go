@@ -2,10 +2,10 @@ package component
 
 //go:generate stringer -type=ActorState
 
-type ActorState uint16
+type ActorState byte
 const (
-	IdleState ActorState = iota
-	WalkState
-	RunState
-	AttackState
+	Idle ActorState = iota
+	Walk
+	Run
+	Attack
 )

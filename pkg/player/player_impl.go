@@ -62,23 +62,26 @@ func (player *PlayerImpl) Render(renderer comp.Renderer) {
 
 // Behavior
 func (player *PlayerImpl) Update(tick int) {
-	//frame := player.Sprite.Frames[player.Sprite.FrameIndex]
 	player.Sprite.Update((1/60.0)) //float32(.5 / 60.0))
 
+	// If player is already in the attacking state then
+	// we want to block movements or other actions being performed
+	if player.State == comp.AttackState {
+		return
+	}
+	// Place player into attacking state
 	if inpututil.IsKeyJustPressed(ebi.KeySpace) {
 		player.State = comp.AttackState
 		player.Sprite.Play("SpearDown")
 		return
 	}
 
-	if player.State == comp.AttackState {
-		return
-	}
 	currentState := comp.IdleState
 
 	hV := float64(0)
 	vV := float64(0)
 
+	// Move the player, and assign walking state
 	if ebi.IsKeyPressed(ebi.KeyA) {
 		hV -= 1
 		currentState = comp.WalkState
@@ -98,7 +101,7 @@ func (player *PlayerImpl) Update(tick int) {
 		vV += 1
 		currentState = comp.WalkState
 	}
-
+	// Check collision with terrain objects
 	if collision := player.Body.Check(hV, vV); collision != nil {
 		hV, vV = 0, 0
 		currentState = comp.IdleState
@@ -109,14 +112,13 @@ func (player *PlayerImpl) Update(tick int) {
 	player.Body.X, player.Body.Y = player.pos[0]-(frameWidth/2), player.pos[1]-(frameHeight/2)
 	player.Body.Update()
 
+	// Play the correct animation
 	player.State = currentState
 	switch currentState {
 	case comp.IdleState:
 		player.Sprite.Play("IdleDown")
 	case comp.WalkState:
 		player.Sprite.Play("WalkDown")
-	case comp.AttackState:
-		//player.Sprite.Play("AttackDown")
 	}
 }
 
