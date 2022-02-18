@@ -31,3 +31,7 @@ func (c *FollowCam) Update(int) {
 func (c *FollowCam) RenderItem(item *ebiten.Image, ops *ebiten.DrawImageOptions) {
 	c.Surface.DrawImage(item, ops)
 }
+
+func (c *FollowCam) ScreenSurface() *ebiten.Image {
+	return c.Surface
+}
