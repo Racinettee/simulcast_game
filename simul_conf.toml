@@ -1,2 +1,5 @@
 # DrawCollisionShapes is for debugging
 DrawCollisionShapes = false
+
+# General config
+ResourcePath = "."

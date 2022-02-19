@@ -22,20 +22,21 @@ const (
 	frameNum    = 8
 )
 
-
 type PlayerImpl struct {
 	pos    f64.Vec2
 	Body   *resolv.Object
 	Img    *ebi.Image
 	Sprite *ase.File
-	State comp.ActorState
+	State  comp.ActorState
+	Dir    comp.Direction
 }
 
 // Positioned
 func (player *PlayerImpl) Pos() f64.Vec2 { return player.pos }
 
 func (player *PlayerImpl) SceneEnter() {
-	player.State = comp.IdleState
+	player.State = comp.Idle
+	player.Dir = comp.Down
 	player.pos[0] = 50
 	player.pos[1] = 50
 	player.Sprite = ase.Open("sprites/player/Chica.json")
@@ -45,10 +46,9 @@ func (player *PlayerImpl) SceneEnter() {
 		log.Println(err)
 	}
 	player.Body = resolv.NewObject(player.pos[0]-(frameWidth/2), player.pos[1]-(frameHeight/2), frameWidth, frameHeight)
-	player.Sprite.Play("IdleDown")
+	player.Sprite.Play(player.StateStr())
 
 	player.Sprite.OnFrameChange = player.OnAnimExit()
-	//player.Sprite.OnTagExit = player.OnAnimExit()
 }
 
 // Renderable
@@ -57,26 +57,26 @@ func (player *PlayerImpl) Render(renderer comp.Renderer) {
 	op := renderer.GetTranslation(player.pos[0], player.pos[1])
 	op.GeoM.Translate(-float64(frameWidth)/2, -float64(frameHeight)/2)
 	renderer.RenderItem(player.Img.SubImage(image.Rect(player.Sprite.CurrentFrameCoords())).(*ebi.Image), op)
-	ebiutil.DebugPrint(renderer.ScreenSurface(), player.State.String())
+	ebiutil.DebugPrint(renderer.ScreenSurface(), player.StateStr())
 }
 
 // Behavior
 func (player *PlayerImpl) Update(tick int) {
-	player.Sprite.Update((1/60.0)) //float32(.5 / 60.0))
+	player.Sprite.Update((1 / 60.0)) //float32(.5 / 60.0))
 
 	// If player is already in the attacking state then
 	// we want to block movements or other actions being performed
-	if player.State == comp.AttackState {
+	if player.State == comp.Attack {
 		return
 	}
 	// Place player into attacking state
 	if inpututil.IsKeyJustPressed(ebi.KeySpace) {
-		player.State = comp.AttackState
+		player.State = comp.Attack
 		player.Sprite.Play("SpearDown")
 		return
 	}
 
-	currentState := comp.IdleState
+	currentState := comp.Idle
 
 	hV := float64(0)
 	vV := float64(0)
@@ -84,27 +84,27 @@ func (player *PlayerImpl) Update(tick int) {
 	// Move the player, and assign walking state
 	if ebi.IsKeyPressed(ebi.KeyA) {
 		hV -= 1
-		currentState = comp.WalkState
+		currentState = comp.Walk
 	}
 
 	if ebi.IsKeyPressed(ebi.KeyD) {
 		hV += 1
-		currentState = comp.WalkState
+		currentState = comp.Walk
 	}
 
 	if ebi.IsKeyPressed(ebi.KeyW) {
 		vV -= 1
-		currentState = comp.WalkState
+		currentState = comp.Walk
 	}
 
 	if ebi.IsKeyPressed(ebi.KeyS) {
 		vV += 1
-		currentState = comp.WalkState
+		currentState = comp.Walk
 	}
 	// Check collision with terrain objects
 	if collision := player.Body.Check(hV, vV); collision != nil {
 		hV, vV = 0, 0
-		currentState = comp.IdleState
+		currentState = comp.Idle
 	}
 
 	player.pos[0] += hV
@@ -115,9 +115,9 @@ func (player *PlayerImpl) Update(tick int) {
 	// Play the correct animation
 	player.State = currentState
 	switch currentState {
-	case comp.IdleState:
+	case comp.Idle:
 		player.Sprite.Play("IdleDown")
-	case comp.WalkState:
+	case comp.Walk:
 		player.Sprite.Play("WalkDown")
 	}
 }
@@ -132,10 +132,14 @@ func (player *PlayerImpl) OnAnimExit() func() {
 			fmt.Printf("Player: %+v - %v exited\n", player, currTag.Name)
 			switch currTag.Name {
 			case "SpearDown":
-				player.State = comp.IdleState
-			case "AttackDown","AttackUp","AttackLeft","AttackRight":
+				player.State = comp.Idle
+			case "AttackDown", "AttackUp", "AttackLeft", "AttackRight":
 				break
 			}
 		}
 	}
+}
+
+func (p *PlayerImpl) StateStr() string {
+	return p.State.String() + p.Dir.String()
 }
