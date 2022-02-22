@@ -1,6 +1,37 @@
 package ase_binary
 
+// Some color definitions
+
+// Just used here by certain packets
+type AsepriteRGB24 struct {
+	R, G, B byte
+}
+
+type AsepriteString struct {
+	Length uint16
+	Bytes  []byte
+}
+
 /**
+ * ASE files use Intel (little-endian) byte order.
+ *
+ * BYTE: An 8-bit unsigned integer value
+ * WORD: A 16-bit unsigned integer value
+ * SHORT: A 16-bit signed integer value
+ * DWORD: A 32-bit unsigned integer value
+ * LONG: A 32-bit signed integer value
+ * FIXED: A 32-bit fixed point (16.16) value
+ * BYTE[n]: "n" bytes.
+ * STRING:
+ *   WORD: string length (number of bytes)
+ *   BYTE[length]: characters (in UTF-8) The '\0' character is not included.
+ * PIXEL: One pixel, depending on the image pixel format:
+ *   RGBA: BYTE[4], each pixel have 4 bytes in this order Red, Green, Blue, Alpha.
+ *   Grayscale: BYTE[2], each pixel have 2 bytes in the order Value, Alpha.
+ *   Indexed: BYTE, each pixel uses 1 byte (the index).
+ * TILE: Tilemaps: Each tile can be a 8-bit (BYTE), 16-bit (WORD), or 32-bit (DWORD) value and there are masks related to the meaning of each bit.
+ *
+ * File Header:
  * DWORD     File size
  * WORD      Magic number (0xA5E0)
  * WORD      Frames
@@ -106,12 +137,98 @@ type AsepriteFrameChunk struct {
 type AsepriteOldPaletteChunk0004 struct {
 	NumberOfPackets uint16
 	// + for each packet
-	Packets []
-	//   + for each color in the packet
-
+	Packets []AsepriteOldPaletteChunk0004Packet
 }
 
 type AsepriteOldPaletteChunk0004Packet struct {
 	NumPalletteEntriesToSkip byte // from thee last packet (start from 0)
 	NumColorsInThePacket     byte // 0 means 256
+	//   + for each color in the packet
+	Colors []AsepriteRGB24
+}
+
+/**
+ * Old palette chunk (0x0011)
+ * Ignore this chunk if you find the new palette chunk (0x2019)
+ * WORD        Number of packets
+ * + For each packet
+ * BYTE      Number of palette entries to skip from the last packet (start from 0)
+ * BYTE      Number of colors in the packet (0 means 256)
+ * + For each color in the packet
+ *   BYTE    Red (0-63)
+ *   BYTE    Green (0-63)
+ *   BYTE    Blue (0-63)
+ */
+
+type AsepritePaletteChunk0011 struct {
+	NumberOfPackets uint16
+	// + for each packet
+	Packets []AsepriteOldPaletteChunk0011Packet
+}
+
+type AsepriteOldPaletteChunk0011Packet struct {
+	NumPalletteEntriesToSkip byte // start from 0
+	NumColorsInThePacket     byte // 0 means 256
+	// + for each color in the packet
+	Colors []AsepriteRGB24 // but using colors in the range 0-63
+}
+
+/**
+ * Layer Chunk (0x2004)
+ * In the first frame should be a set of layer chunks to determine the entire layers layout:
+ * WORD  Flags:
+ *        1 = Visible
+ *        2 = Editable
+ *        4 = Lock movement
+ *        8 = Background
+ *       16 = Prefer linked cels
+ *       32 = The layer group should be displayed collapsed
+ *       64 = The layer is a reference layer
+ * WORD  Layer type
+ *        0 = Normal (image) layer
+ *        1 = Group
+ *        2 = Tilemap
+ * WORD  Layer child level (see NOTE.1)
+ * WORD  Default layer width in pixels (ignored)
+ * WORD  Default layer height in pixels (ignored)
+ * WORD  Blend mode (always 0 for layer set)
+ *        Normal         = 0
+ *        Multiply       = 1
+ *        Screen         = 2
+ *        Overlay        = 3
+ *        Darken         = 4
+ *        Lighten        = 5
+ *        Color Dodge    = 6
+ *        Color Burn     = 7
+ *        Hard Light     = 8
+ *        Soft Light     = 9
+ *        Difference     = 10
+ *        Exclusion      = 11
+ *        Hue            = 12
+ *        Saturation     = 13
+ *        Color          = 14
+ *        Luminosity     = 15
+ *        Addition       = 16
+ *        Subtract       = 17
+ *        Divide         = 18
+ * BYTE  Opacity
+ *        Note: valid only if file header flags field has bit 1 set
+ * BYTE[3] For future (set to zero)
+ * STRING  Layer name
+ *  + If layer type = 2
+ * DWORD   Tileset index
+ */
+
+type AsepriteLayerChunk2004 struct {
+	Flags                uint16
+	LayerType            uint16
+	LayerChildLevel      uint16
+	DefLayerWidthPixels  uint16 // (ignored)
+	DefLayerHeightPixels uint16 // (ignored)
+	BlendMode            uint16
+	Opacity              byte // only valid if file headre flag field has bit 1 set
+	forFuture            [3]byte
+	LayerName            AsepriteString
+	// + if layer type = 2
+	TilesetIndex uint32
 }
