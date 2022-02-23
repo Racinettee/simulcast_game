@@ -77,14 +77,13 @@ type AsepriteHeader struct {
 	ignore1, ignore2 uint32
 	PaletteEntry     byte // represents transparent color in all non-background layers (only for indexed sprites)
 	// format defines these 3 bytes as ignored
-	ignore3         [3]byte
-	NumberOfColors  uint16
-	PixelWidth      byte // (pixel ratio is "pxel width/pixel height")
-	PixelHeight     byte
-	XPositionOfGrid int16
-	YPositionOfGrid int16
-	GridWidth       uint16
-	GridHeight      uint16
+	ignore3        [3]byte
+	NumberOfColors uint16
+	// (pixel ratio is "pxel width/pixel height")
+	PixelWidth, PixelHeight byte
+	XPositionOfGrid         int16
+	YPositionOfGrid         int16
+	GridWidth, GridHeight   uint16
 	// Future reserved
 	reserved [84]byte
 }
@@ -116,15 +115,9 @@ type AsepriteFrame struct {
  * DWORD       Chunk size
  * WORD        Chunk type
  * BYTE[]      Chunk data
- */
-
-type AsepriteFrameChunk struct {
-	ChunkSize uint32
-	ChunkType uint16
-	ChunkData []byte
-}
-
-/**
+ *
+ * -----------------
+ *
  * Ignore this chunk if you find the new palette chunk (0x2019) Aseprite v1.1 saves both chunks 0x0004 and 0x2019 just for backward compatibility.
  * WORD        Number of packets
  * + For each packet
@@ -164,10 +157,10 @@ type AsepriteOldPaletteChunk0004Packet struct {
 type AsepritePaletteChunk0011 struct {
 	NumberOfPackets uint16
 	// + for each packet
-	Packets []AsepriteOldPaletteChunk0011Packet
+	Packets []AsepritePaletteChunk0011Packet
 }
 
-type AsepriteOldPaletteChunk0011Packet struct {
+type AsepritePaletteChunk0011Packet struct {
 	NumPalletteEntriesToSkip byte // start from 0
 	NumColorsInThePacket     byte // 0 means 256
 	// + for each color in the packet
@@ -193,25 +186,16 @@ type AsepriteOldPaletteChunk0011Packet struct {
  * WORD  Default layer width in pixels (ignored)
  * WORD  Default layer height in pixels (ignored)
  * WORD  Blend mode (always 0 for layer set)
- *        Normal         = 0
- *        Multiply       = 1
- *        Screen         = 2
- *        Overlay        = 3
- *        Darken         = 4
- *        Lighten        = 5
- *        Color Dodge    = 6
- *        Color Burn     = 7
- *        Hard Light     = 8
- *        Soft Light     = 9
- *        Difference     = 10
- *        Exclusion      = 11
- *        Hue            = 12
- *        Saturation     = 13
- *        Color          = 14
- *        Luminosity     = 15
- *        Addition       = 16
- *        Subtract       = 17
- *        Divide         = 18
+ *        Normal       = 0   Multiply     = 1
+ *        Screen       = 2   Overlay      = 3
+ *        Darken       = 4   Lighten      = 5
+ *        Color Dodge  = 6   Color Burn   = 7
+ *        Hard Light   = 8   Soft Light   = 9
+ *        Difference   = 10  Exclusion    = 11
+ *        Hue          = 12  Saturation   = 13
+ *        Color        = 14  Luminosity   = 15
+ *        Addition     = 16  Subtract     = 17
+ *        Divide       = 18
  * BYTE  Opacity
  *        Note: valid only if file header flags field has bit 1 set
  * BYTE[3] For future (set to zero)
@@ -273,6 +257,7 @@ type AsepriteLayerChunk2004 struct {
  */
 
 type AsepriteCelChunk2005 struct {
+	parentHeader *AsepriteHeader
 	LayerIndex   uint16
 	X, Y         int16
 	OpacityLevel byte
@@ -286,7 +271,7 @@ type AsepriteCelChunk2005 struct {
 	// + For cel type = 2 (Compressed Image)
 	// WORD      Width in pixels
 	// WORD      Height in pixels
-	RawCelData []byte // "Raw Cel" data compressed with ZLIB method (see NOTE.3)
+	RawCelData []byte // "Raw Cel" data decompressed from ZLIB (see NOTE.3)
 	// + For cel type = 3 (Compressed Tilemap)
 	WidthInTiles, HeightInTiles uint16
 	BitsPerTile                 uint16 // (at the moment it's always 32-bit per tile)
@@ -425,6 +410,167 @@ type AsepritePathChunk2017 struct{}
  *  STRING    Tag name
  */
 type AsepriteTagsChunk2018 struct {
+	NumTags            uint16
+	reserved1          [8]byte
+	FromFrame, ToFrame uint16
+	LoopAnimDirection  byte
+	reserved2          [8]byte
+	TagColor           [3]byte // deprecated
+	ExtraByte          byte    // (zero)
+	TagName            AsepriteString
+}
+
+/**
+ * Palette Chunk (0x2019)
+ *
+ * DWORD       New palette size (total number of entries)
+ * DWORD       First color index to change
+ * DWORD       Last color index to change
+ * BYTE[8]     For future (set to zero)
+ * + For each palette entry in [from,to] range (to-from+1 entries)
+ *   WORD      Entry flags:
+ *               1 = Has name
+ *   BYTE      Red (0-255)
+ *   BYTE      Green (0-255)
+ *   BYTE      Blue (0-255)
+ *   BYTE      Alpha (0-255)
+ *   + If has name bit in entry flags
+ *     STRING  Color name
+ */
+
+type AsepritePaletteChunk2019 struct {
+	NewPaletteSize        uint32
+	FirstColIndexToChange uint32
+	LastColIndexToChange  uint32
+	reserved              [8]byte
+	// + For each palette entry in [from,to] range (to-from+1 entries)
+	PaletteEntries []AsepritePaletteChunk2019Entry
+}
+
+type AsepritePaletteChunk2019Entry struct {
+	EntryFlags uint16
+	R, G, B, A byte
+	// + If has name bit in entry flags
+	ColorName AsepriteString
+}
+
+/**
+ * User Data Chunk (0x2020)
+ * Insert this user data in the last read chunk. E.g. If we've read a layer, this user data belongs to that layer, if we've read a cel, it belongs to that cel, etc. There are some special cases: After a Tags chunk, there will be several user data fields, one for each tag, you should associate the user data in the same order as the tags are in the Tags chunk. In version 1.3 a sprite has associated user data, to consider this case there is an User Data Chunk at the first frame after the Palette Chunk.
+ *
+ * DWORD  Flags
+ *         1 = Has text  2 = Has color
+ *  + If flags have bit 1
+ *    STRING    Text
+ *  + If flags have bit 2
+ *    BYTE  Color Red (0-255)
+ *    BYTE  Color Green (0-255)
+ *    BYTE  Color Blue (0-255)
+ *    BYTE  Color Alpha (0-255)
+ */
+
+type AsepriteUserDataChunk2020 struct {
+	Flags uint32
+	// + If flags have bit 1
+	Text AsepriteString
+	// + If flags have bit 2
+	R, G, B, A byte
+}
+
+/**
+ * Slice Chunk (0x2022)
+ *
+ * DWORD       Number of "slice keys"
+ * DWORD       Flags
+ *              1 = It's a 9-patches slice
+ *              2 = Has pivot information
+ * DWORD       Reserved
+ * STRING      Name
+ * + For each slice key
+ *   DWORD     Frame number (this slice is valid from
+ *             this frame to the end of the animation)
+ *   LONG      Slice X origin coordinate in the sprite
+ *   LONG      Slice Y origin coordinate in the sprite
+ *   DWORD     Slice width (can be 0 if this slice hidden in the
+ *             animation from the given frame)
+ *   DWORD     Slice height
+ *   + If flags have bit 1
+ *     LONG    Center X position (relative to slice bounds)
+ *     LONG    Center Y position
+ *     DWORD   Center width
+ *     DWORD   Center height
+ *   + If flags have bit 2
+ *     LONG    Pivot X position (relative to the slice origin)
+ *     LONG    Pivot Y position (relative to the slice origin)
+ */
+
+type AsepriteSliceChunk2022 struct {
+	NumSliceKeys uint32
+	Flags        uint32
+	reserved     uint32
+	Name         AsepriteString
+	// + For each slice key
+	SliceKeysData []AsepriteSliceChunk2022Data
+}
+
+type AsepriteSliceChunk2022Data struct {
+	FrameNumber             uint32
+	SliceXOriginCoords      int32
+	SliceYOriginCoords      int32
+	SliceWidth, SliceHeight uint32
+	// + If flags have bit 1
+	CenterX, CenterY          int32
+	CenterWidth, CenterHeight uint32
+	// + If flags have bit 2
+	PivotX, PivotY int32
+}
+
+/**
+ * Tileset Chunk (0x2023)
+ *
+ * DWORD    Tileset ID
+ * DWORD    Tileset flags
+ *             1 - Include link to external file
+ *             2 - Include tiles inside this file
+ *             4 - Tilemaps using this tileset use tile ID=0 as empty tile
+ *              (this is the new format). In rare cases this bit is off,
+ *               and the empty tile will be equal to 0xffffffff (used in
+ *               internal versions of Aseprite)
+ * DWORD    Number of tiles
+ * WORD     Tile Width
+ * WORD     Tile Height
+ * SHORT    Base Index: Number to show in the screen from the tile with
+ *           index 1 and so on (by default this is field is 1, so the data
+ *           that is displayed is equivalent to the data in memory). But it
+ *           can be 0 to display zero-based indexing (this field isn't used
+ *           for the representation of the data in the file, it's just for
+ *           UI purposes).
+ * BYTE[14] Reserved
+ * STRING   Name of the tileset
+ * + If flag 1 is set
+ *   DWORD  ID of the external file. This ID is one entry
+ *            of the the External Files Chunk.
+ *   DWORD  Tileset ID in the external file
+ * + If flag 2 is set
+ *   DWORD   Compressed data length
+ *   PIXEL[] Compressed Tileset image (see NOTE.3):
+ *               (Tile Width) x (Tile Height x Number of Tiles)
+ */
+
+type AsepriteTilesetChunk2023 struct {
+	TilesetID             uint32
+	Flags                 uint32
+	NumTiles              uint32
+	TileWidth, TileHeight uint16
+	BaseIndex             int16
+	reserved              [14]byte
+	Name                  AsepriteString
+	// + If flag 1 is set
+	ExternalFileID          uint32
+	TilesetIDInExternalFile uint32
+	// + If flag 2 is set
+	CompressedDatLen     uint32
+	CompressedTilesetImg []byte
 }
 
 /**
