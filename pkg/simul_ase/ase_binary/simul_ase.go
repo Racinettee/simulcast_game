@@ -377,7 +377,7 @@ type AsepriteMaskChunk2016 struct {
 	X, Y          int16
 	Width, Height uint16
 	future        [8]byte
-	MaskName      AsepriteString
+	MaskName      string
 	BitMapData    []byte
 }
 
@@ -410,14 +410,18 @@ type AsepritePathChunk2017 struct{}
  *  STRING    Tag name
  */
 type AsepriteTagsChunk2018 struct {
-	NumTags            uint16
-	reserved1          [8]byte
+	NumTags   uint16
+	reserved1 [8]byte
+	Tags      []AsepriteTagsChunk2018Tag
+}
+
+type AsepriteTagsChunk2018Tag struct {
 	FromFrame, ToFrame uint16
 	LoopAnimDirection  byte
 	reserved2          [8]byte
 	TagColor           [3]byte // deprecated
 	ExtraByte          byte    // (zero)
-	TagName            AsepriteString
+	TagName            string
 }
 
 /**
@@ -439,7 +443,7 @@ type AsepriteTagsChunk2018 struct {
  */
 
 type AsepritePaletteChunk2019 struct {
-	NewPaletteSize        uint32
+	PaletteSize           uint32
 	FirstColIndexToChange uint32
 	LastColIndexToChange  uint32
 	reserved              [8]byte
@@ -451,7 +455,7 @@ type AsepritePaletteChunk2019Entry struct {
 	EntryFlags uint16
 	R, G, B, A byte
 	// + If has name bit in entry flags
-	ColorName AsepriteString
+	ColorName string
 }
 
 /**
@@ -472,7 +476,7 @@ type AsepritePaletteChunk2019Entry struct {
 type AsepriteUserDataChunk2020 struct {
 	Flags uint32
 	// + If flags have bit 1
-	Text AsepriteString
+	Text string
 	// + If flags have bit 2
 	R, G, B, A byte
 }
@@ -508,12 +512,13 @@ type AsepriteSliceChunk2022 struct {
 	NumSliceKeys uint32
 	Flags        uint32
 	reserved     uint32
-	Name         AsepriteString
+	Name         string
 	// + For each slice key
 	SliceKeysData []AsepriteSliceChunk2022Data
 }
 
 type AsepriteSliceChunk2022Data struct {
+	parentChunk             *AsepriteSliceChunk2022
 	FrameNumber             uint32
 	SliceXOriginCoords      int32
 	SliceYOriginCoords      int32
@@ -564,7 +569,7 @@ type AsepriteTilesetChunk2023 struct {
 	TileWidth, TileHeight uint16
 	BaseIndex             int16
 	reserved              [14]byte
-	Name                  AsepriteString
+	Name                  string
 	// + If flag 1 is set
 	ExternalFileID          uint32
 	TilesetIDInExternalFile uint32

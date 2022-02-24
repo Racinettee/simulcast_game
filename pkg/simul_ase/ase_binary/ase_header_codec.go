@@ -10,6 +10,21 @@ import (
 
 var ble = binary.LittleEndian
 
+func DecodeAseString(r io.Reader) string {
+	var len uint16
+	binary.Read(r, ble, &len)
+	buff := make([]byte, len)
+	binary.Read(r, ble, &buff)
+	return string(buff)
+}
+
+func EncodeAseString(w io.Writer, str string) {
+	len := uint16(len(str))
+	binary.Write(w, ble, &len)
+	buff := []byte(str)
+	binary.Write(w, ble, &buff)
+}
+
 func (aseHeader *AsepriteHeader) Decode(r io.Reader) {
 	binary.Read(r, ble, &aseHeader.FileSize)
 	binary.Read(r, ble, &aseHeader.MagicNumber)
@@ -262,5 +277,277 @@ func (aseCelChunk *AsepriteCelChunk2005) Encode(w io.Writer) {
 		zwriter := zlib.NewWriter(&byteBuff)
 		zwriter.Write(aseCelChunk.Tiles)
 		w.Write(byteBuff.Bytes())
+	}
+}
+
+func (aseCelExtra *AsepriteCelExtraChunk2006) Decode(r io.Reader) {
+	binary.Read(r, ble, &aseCelExtra.Flags)
+	binary.Read(r, ble, &aseCelExtra.PreciseX)
+	binary.Read(r, ble, &aseCelExtra.PreciseY)
+	binary.Read(r, ble, &aseCelExtra.WidthCelInSprite)
+	binary.Read(r, ble, &aseCelExtra.HeightCelInSprite)
+	binary.Read(r, ble, &aseCelExtra.futureUse)
+}
+
+func (aseCelExtra *AsepriteCelExtraChunk2006) Encode(w io.Writer) {
+	binary.Write(w, ble, &aseCelExtra.Flags)
+	binary.Write(w, ble, &aseCelExtra.PreciseX)
+	binary.Write(w, ble, &aseCelExtra.PreciseY)
+	binary.Write(w, ble, &aseCelExtra.WidthCelInSprite)
+	binary.Write(w, ble, &aseCelExtra.HeightCelInSprite)
+	binary.Write(w, ble, &aseCelExtra.futureUse)
+}
+
+func (aseColProfile *AsepriteColorProfileChunk2007) Decode(r io.Reader) {
+	binary.Read(r, ble, &aseColProfile.Type)
+	binary.Read(r, ble, &aseColProfile.Flags)
+	binary.Read(r, ble, &aseColProfile.FixedGamma)
+	binary.Read(r, ble, &aseColProfile.reserved)
+	if aseColProfile.Type == 2 {
+		binary.Read(r, ble, &aseColProfile.ICCProfileDatLen)
+		aseColProfile.ICCProfileDat = make([]byte, aseColProfile.ICCProfileDatLen)
+		binary.Read(r, ble, &aseColProfile.ICCProfileDat)
+	}
+}
+
+func (aseColProfile AsepriteColorProfileChunk2007) Encode(w io.Writer) {
+	binary.Write(w, ble, &aseColProfile.Type)
+	binary.Write(w, ble, &aseColProfile.Flags)
+	binary.Write(w, ble, &aseColProfile.FixedGamma)
+	binary.Write(w, ble, &aseColProfile.reserved)
+	if aseColProfile.Type == 2 {
+		binary.Write(w, ble, &aseColProfile.ICCProfileDatLen)
+		binary.Write(w, ble, &aseColProfile.ICCProfileDat)
+	}
+}
+
+func (aseExtFile *AsepriteExternalFilesChunk2008) Decode(r io.Reader) {
+	binary.Read(r, ble, &aseExtFile.NumEntries)
+	binary.Read(r, ble, &aseExtFile.reserved)
+	// for each entry
+	aseExtFile.ExternalFile = make([]AsepriteExternalFilesChunk2008Entry, aseExtFile.NumEntries)
+	for _, file := range aseExtFile.ExternalFile {
+		binary.Read(r, ble, &file.EntryID)
+		binary.Read(r, ble, &file.reserved)
+		binary.Read(r, ble, &file.ExternalFilename.Length)
+		file.ExternalFilename.Bytes = make([]byte, file.ExternalFilename.Length)
+		binary.Read(r, ble, &file.ExternalFilename.Bytes)
+	}
+}
+
+func (aseExtFile *AsepriteExternalFilesChunk2008) Encode(w io.Writer) {
+	binary.Write(w, ble, &aseExtFile.NumEntries)
+	binary.Write(w, ble, &aseExtFile.reserved)
+	// for each entry
+	for _, file := range aseExtFile.ExternalFile {
+		binary.Write(w, ble, &file.EntryID)
+		binary.Write(w, ble, &file.reserved)
+		binary.Write(w, ble, &file.ExternalFilename.Length)
+		binary.Write(w, ble, &file.ExternalFilename.Bytes)
+	}
+}
+
+func (aseMask *AsepriteMaskChunk2016) Decode(r io.Reader) {
+	binary.Read(r, ble, &aseMask.X)
+	binary.Read(r, ble, &aseMask.Y)
+	binary.Read(r, ble, &aseMask.Width)
+	binary.Read(r, ble, &aseMask.Height)
+	binary.Read(r, ble, &aseMask.future)
+	aseMask.MaskName = DecodeAseString(r)
+	aseMask.BitMapData = make([]byte,
+		(aseMask.Height * ((aseMask.Width + 7) / 8)))
+	binary.Read(r, ble, &aseMask.BitMapData)
+}
+
+func (aseMask *AsepriteMaskChunk2016) Encode(w io.Writer) {
+	binary.Write(w, ble, &aseMask.X)
+	binary.Write(w, ble, &aseMask.Y)
+	binary.Write(w, ble, &aseMask.Width)
+	binary.Write(w, ble, &aseMask.Height)
+	binary.Write(w, ble, &aseMask.future)
+	EncodeAseString(w, aseMask.MaskName)
+	binary.Write(w, ble, &aseMask.BitMapData)
+}
+
+func (aseTags *AsepriteTagsChunk2018) Decode(r io.Reader) {
+	binary.Read(r, ble, &aseTags.NumTags)
+	binary.Read(r, ble, &aseTags.reserved1)
+	aseTags.Tags = make([]AsepriteTagsChunk2018Tag, aseTags.NumTags)
+	for _, tag := range aseTags.Tags {
+		tag.Decode(r)
+	}
+}
+
+func (aseTag *AsepriteTagsChunk2018Tag) Decode(r io.Reader) {
+	binary.Read(r, ble, &aseTag.FromFrame)
+	binary.Read(r, ble, &aseTag.ToFrame)
+	binary.Read(r, ble, &aseTag.LoopAnimDirection)
+	binary.Read(r, ble, &aseTag.reserved2)
+	binary.Read(r, ble, &aseTag.TagColor)
+	binary.Read(r, ble, &aseTag.ExtraByte)
+	aseTag.TagName = DecodeAseString(r)
+}
+
+func (aseTags AsepriteTagsChunk2018) Encode(w io.Writer) {
+	binary.Write(w, ble, &aseTags.NumTags)
+	binary.Write(w, ble, &aseTags.reserved1)
+	for _, tag := range aseTags.Tags {
+		tag.Encode(w)
+	}
+}
+
+func (aseTag AsepriteTagsChunk2018Tag) Encode(w io.Writer) {
+	binary.Write(w, ble, &aseTag.FromFrame)
+	binary.Write(w, ble, &aseTag.ToFrame)
+	binary.Write(w, ble, &aseTag.LoopAnimDirection)
+	binary.Write(w, ble, &aseTag.reserved2)
+	binary.Write(w, ble, &aseTag.TagColor)
+	binary.Write(w, ble, &aseTag.ExtraByte)
+	EncodeAseString(w, aseTag.TagName)
+}
+
+func (asePaletteChunk *AsepritePaletteChunk2019) Decode(r io.Reader) {
+	binary.Read(r, ble, &asePaletteChunk.PaletteSize)
+	binary.Read(r, ble, &asePaletteChunk.FirstColIndexToChange)
+	binary.Read(r, ble, &asePaletteChunk.LastColIndexToChange)
+	binary.Read(r, ble, &asePaletteChunk.reserved)
+	asePaletteChunk.PaletteEntries =
+		make([]AsepritePaletteChunk2019Entry, asePaletteChunk.PaletteSize)
+	for _, paletteEntry := range asePaletteChunk.PaletteEntries {
+		paletteEntry.Decode(r)
+	}
+}
+
+func (asePaletteEntry *AsepritePaletteChunk2019Entry) Decode(r io.Reader) {
+	binary.Read(r, ble, &asePaletteEntry.EntryFlags)
+	binary.Read(r, ble, &asePaletteEntry.R)
+	binary.Read(r, ble, &asePaletteEntry.G)
+	binary.Read(r, ble, &asePaletteEntry.B)
+	binary.Read(r, ble, &asePaletteEntry.A)
+	asePaletteEntry.ColorName = DecodeAseString(r)
+}
+
+func (asePaletteChunk AsepritePaletteChunk2019) Encode(w io.Writer) {
+	binary.Write(w, ble, &asePaletteChunk.PaletteSize)
+	binary.Write(w, ble, &asePaletteChunk.FirstColIndexToChange)
+	binary.Write(w, ble, &asePaletteChunk.LastColIndexToChange)
+	binary.Write(w, ble, &asePaletteChunk.reserved)
+	for _, paletteEntry := range asePaletteChunk.PaletteEntries {
+		paletteEntry.Encode(w)
+	}
+}
+
+func (asePaletteEntry AsepritePaletteChunk2019Entry) Encode(w io.Writer) {
+	binary.Write(w, ble, &asePaletteEntry.EntryFlags)
+	binary.Write(w, ble, &asePaletteEntry.R)
+	binary.Write(w, ble, &asePaletteEntry.G)
+	binary.Write(w, ble, &asePaletteEntry.B)
+	binary.Write(w, ble, &asePaletteEntry.A)
+	EncodeAseString(w, asePaletteEntry.ColorName)
+}
+
+func (aseUserDat *AsepriteUserDataChunk2020) Decode(r io.Reader) {
+	binary.Read(r, ble, &aseUserDat.Flags)
+	if aseUserDat.Flags&0x00000001 == 1 {
+		aseUserDat.Text = DecodeAseString(r)
+	}
+	if aseUserDat.Flags&0x00000002 == 2 {
+		binary.Read(r, ble, &aseUserDat.R)
+		binary.Read(r, ble, &aseUserDat.G)
+		binary.Read(r, ble, &aseUserDat.B)
+		binary.Read(r, ble, &aseUserDat.A)
+	}
+}
+
+func (aseUserDat AsepriteUserDataChunk2020) Encode(w io.Writer) {
+	binary.Write(w, ble, &aseUserDat.Flags)
+	if aseUserDat.Flags&0x00000001 == 1 {
+		EncodeAseString(w, aseUserDat.Text)
+	}
+	if aseUserDat.Flags&0x00000002 == 2 {
+		binary.Write(w, ble, &aseUserDat.R)
+		binary.Write(w, ble, &aseUserDat.G)
+		binary.Write(w, ble, &aseUserDat.B)
+		binary.Write(w, ble, &aseUserDat.A)
+	}
+}
+
+func (aseSlice *AsepriteSliceChunk2022) Decode(r io.Reader) {
+	binary.Read(r, ble, &aseSlice.NumSliceKeys)
+	binary.Read(r, ble, &aseSlice.Flags)
+	binary.Read(r, ble, &aseSlice.reserved)
+	aseSlice.Name = DecodeAseString(r)
+	aseSlice.SliceKeysData =
+		make([]AsepriteSliceChunk2022Data, aseSlice.NumSliceKeys)
+	for _, slice := range aseSlice.SliceKeysData {
+		slice.parentChunk = aseSlice
+		slice.Decode(r)
+	}
+}
+
+func (aseSliceDat *AsepriteSliceChunk2022Data) Decode(r io.Reader) {
+	binary.Read(r, ble, &aseSliceDat.FrameNumber)
+	binary.Read(r, ble, &aseSliceDat.SliceXOriginCoords)
+	binary.Read(r, ble, &aseSliceDat.SliceYOriginCoords)
+	binary.Read(r, ble, &aseSliceDat.SliceWidth)
+	binary.Read(r, ble, &aseSliceDat.SliceHeight)
+	if aseSliceDat.parentChunk.Flags&0x00000001 == 1 {
+		binary.Read(r, ble, &aseSliceDat.CenterX)
+		binary.Read(r, ble, &aseSliceDat.CenterY)
+		binary.Read(r, ble, &aseSliceDat.CenterWidth)
+		binary.Read(r, ble, &aseSliceDat.CenterHeight)
+	}
+	if aseSliceDat.parentChunk.Flags&0x00000002 == 2 {
+		binary.Read(r, ble, &aseSliceDat.PivotX)
+		binary.Read(r, ble, &aseSliceDat.PivotY)
+	}
+}
+
+func (aseSlice AsepriteSliceChunk2022) Encode(w io.Writer) {
+	binary.Write(w, ble, &aseSlice.NumSliceKeys)
+	binary.Write(w, ble, &aseSlice.Flags)
+	binary.Write(w, ble, &aseSlice.reserved)
+	EncodeAseString(w, aseSlice.Name)
+	for _, slice := range aseSlice.SliceKeysData {
+		slice.parentChunk = &aseSlice
+		slice.Encode(w)
+	}
+}
+
+func (aseSliceDat AsepriteSliceChunk2022Data) Encode(w io.Writer) {
+	binary.Write(w, ble, &aseSliceDat.FrameNumber)
+	binary.Write(w, ble, &aseSliceDat.SliceXOriginCoords)
+	binary.Write(w, ble, &aseSliceDat.SliceYOriginCoords)
+	binary.Write(w, ble, &aseSliceDat.SliceWidth)
+	binary.Write(w, ble, &aseSliceDat.SliceHeight)
+	if aseSliceDat.parentChunk.Flags&0x00000001 == 1 {
+		binary.Write(w, ble, &aseSliceDat.CenterX)
+		binary.Write(w, ble, &aseSliceDat.CenterY)
+		binary.Write(w, ble, &aseSliceDat.CenterWidth)
+		binary.Write(w, ble, &aseSliceDat.CenterHeight)
+	}
+	if aseSliceDat.parentChunk.Flags&0x00000002 == 2 {
+		binary.Write(w, ble, &aseSliceDat.PivotX)
+		binary.Write(w, ble, &aseSliceDat.PivotY)
+	}
+}
+
+func (aseTileset *AsepriteTilesetChunk2023) Decode(r io.Reader) {
+	binary.Read(r, ble, &aseTileset.TilesetID)
+	binary.Read(r, ble, &aseTileset.Flags)
+	binary.Read(r, ble, &aseTileset.NumTiles)
+	binary.Read(r, ble, &aseTileset.TileWidth)
+	binary.Read(r, ble, &aseTileset.TileHeight)
+	binary.Read(r, ble, &aseTileset.BaseIndex)
+	binary.Read(r, ble, &aseTileset.reserved)
+	aseTileset.Name = DecodeAseString(r)
+	if aseTileset.Flags&0x00000001 == 1 {
+		binary.Read(r, ble, &aseTileset.ExternalFileID)
+		binary.Read(r, ble, &aseTileset.TilesetIDInExternalFile)
+	}
+	if aseTileset.Flags&0x00000002 == 2 {
+		binary.Read(r, ble, &aseTileset.CompressedDatLen)
+		aseTileset.CompressedTilesetImg = make([]byte, aseTileset.CompressedDatLen)
+		binary.Read(r, ble, &aseTileset.CompressedTilesetImg)
 	}
 }
