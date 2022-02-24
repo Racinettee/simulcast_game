@@ -7,11 +7,6 @@ type AsepriteRGB24 struct {
 	R, G, B byte
 }
 
-type AsepriteString struct {
-	Length uint16
-	Bytes  []byte
-}
-
 /**
  * ASE files use Intel (little-endian) byte order.
  *
@@ -213,7 +208,7 @@ type AsepriteLayerChunk2004 struct {
 	BlendMode            uint16
 	Opacity              byte // only valid if file headre flag field has bit 1 set
 	forFuture            [3]byte
-	LayerName            AsepriteString
+	LayerName            string
 	// + if layer type = 2
 	TilesetIndex uint32
 }
@@ -356,7 +351,7 @@ type AsepriteExternalFilesChunk2008 struct {
 type AsepriteExternalFilesChunk2008Entry struct {
 	EntryID          uint32
 	reserved         [8]byte
-	ExternalFilename AsepriteString
+	ExternalFilename string
 }
 
 /**

@@ -157,9 +157,7 @@ func (aseLayerChunk *AsepriteLayerChunk2004) Decode(r io.Reader) {
 	binary.Read(r, ble, &aseLayerChunk.BlendMode)
 	binary.Read(r, ble, &aseLayerChunk.Opacity)
 	binary.Read(r, ble, &aseLayerChunk.forFuture)
-	binary.Read(r, ble, &aseLayerChunk.LayerName.Length)
-	aseLayerChunk.LayerName.Bytes = make([]byte, aseLayerChunk.LayerName.Length)
-	binary.Read(r, ble, aseLayerChunk.LayerName.Bytes)
+	aseLayerChunk.LayerName = DecodeAseString(r)
 	if aseLayerChunk.LayerType == 2 {
 		binary.Read(r, ble, &aseLayerChunk.TilesetIndex)
 	}
@@ -174,8 +172,7 @@ func (aseLayerChunk AsepriteLayerChunk2004) Encode(w io.Writer) {
 	binary.Write(w, ble, &aseLayerChunk.BlendMode)
 	binary.Write(w, ble, &aseLayerChunk.Opacity)
 	binary.Write(w, ble, &aseLayerChunk.forFuture)
-	binary.Write(w, ble, &aseLayerChunk.LayerName.Length)
-	binary.Write(w, ble, &aseLayerChunk.LayerName.Bytes)
+	EncodeAseString(w, aseLayerChunk.LayerName)
 	if aseLayerChunk.LayerType == 2 {
 		binary.Write(w, ble, &aseLayerChunk.TilesetIndex)
 	}
@@ -329,9 +326,7 @@ func (aseExtFile *AsepriteExternalFilesChunk2008) Decode(r io.Reader) {
 	for _, file := range aseExtFile.ExternalFile {
 		binary.Read(r, ble, &file.EntryID)
 		binary.Read(r, ble, &file.reserved)
-		binary.Read(r, ble, &file.ExternalFilename.Length)
-		file.ExternalFilename.Bytes = make([]byte, file.ExternalFilename.Length)
-		binary.Read(r, ble, &file.ExternalFilename.Bytes)
+		file.ExternalFilename = DecodeAseString(r)
 	}
 }
 
@@ -342,8 +337,7 @@ func (aseExtFile *AsepriteExternalFilesChunk2008) Encode(w io.Writer) {
 	for _, file := range aseExtFile.ExternalFile {
 		binary.Write(w, ble, &file.EntryID)
 		binary.Write(w, ble, &file.reserved)
-		binary.Write(w, ble, &file.ExternalFilename.Length)
-		binary.Write(w, ble, &file.ExternalFilename.Bytes)
+		EncodeAseString(w, file.ExternalFilename)
 	}
 }
 
