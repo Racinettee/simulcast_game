@@ -103,6 +103,11 @@ type AsepriteFrame struct {
 	FrameDurationMilliseconds uint16
 	reserved                  [2]byte
 	ChunksThisFrameExt        uint32 // New field which specifies num chunks. If 0, use old field
+	OldPalettes0004           []AsepriteOldPaletteChunk0004
+	OldPalettes0011           []AsepritePaletteChunk0011
+	Layers                    []AsepriteLayerChunk2004
+	Cels                      []AsepriteCelChunk2005
+	Palettes                  []AsepritePaletteChunk2019
 }
 
 /**
@@ -276,6 +281,7 @@ type AsepriteCelChunk2005 struct {
 	BitMaskFor90CWRot           uint32
 	reserved                    [10]byte
 	Tiles                       []byte // zlib data (see NOTE.3)
+	Extra                       *AsepriteCelExtraChunk2006
 }
 
 /**

@@ -80,6 +80,41 @@ func (aseFrame *AsepriteFrame) Decode(r io.Reader) {
 	binary.Read(r, ble, &aseFrame.ChunksThisFrameExt)
 	//
 	// Load n-amount of chunks
+	loadChunks := 0
+	if aseFrame.ChunksThisFrameExt == 0 {
+		loadChunks = int(aseFrame.ChunksThisFrame)
+	} else {
+		loadChunks = int(aseFrame.ChunksThisFrameExt)
+	}
+	for x := 0; x < loadChunks; x += 1 {
+		var chunkSize uint32
+		var chunkType uint16
+		binary.Read(r, ble, &chunkSize)
+		binary.Read(r, ble, &chunkType)
+
+		switch chunkType {
+		case 0x0004:
+			var oldPalette0004 AsepriteOldPaletteChunk0004
+			oldPalette0004.Decode(r)
+			aseFrame.OldPalettes0004 = append(aseFrame.OldPalettes0004, oldPalette0004)
+		case 0x0011:
+			var oldPalette0011 AsepritePaletteChunk0011
+			oldPalette0011.Decode(r)
+			aseFrame.OldPalettes0011 = append(aseFrame.OldPalettes0011, oldPalette0011)
+		case 0x2004:
+			var layer AsepriteLayerChunk2004
+			layer.Decode(r)
+			aseFrame.Layers = append(aseFrame.Layers, layer)
+		case 0x2005:
+			var cel AsepriteCelChunk2005
+			cel.Decode(r)
+			aseFrame.Cels = append(aseFrame.Cels, cel)
+		case 0x2019:
+			var palette AsepritePaletteChunk2019
+			palette.Decode(r)
+			aseFrame.Palettes = append(aseFrame.Palettes, palette)
+		}
+	}
 }
 
 func (aseFrame AsepriteFrame) Encode(w io.Writer) {
