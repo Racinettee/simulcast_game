@@ -1,20 +1,26 @@
-package ase_binary
+package asefile
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 type AsepriteFile struct {
 	Header AsepriteHeader
 	Frames []AsepriteFrame
 }
 
-func (aseFile *AsepriteFile) Decode(r io.Reader) {
+func (aseFile *AsepriteFile) Decode(r io.Reader) error {
+	fmt.Println("Decoding sprites...")
 	aseFile.Header.Decode(r)
-
 	aseFile.Frames = make([]AsepriteFrame, aseFile.Header.Frames)
-
 	for _, frame := range aseFile.Frames {
-		frame.Decode(r)
+		err := frame.Decode(r)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (aseFile *AsepriteFile) Encode(w io.Writer) {

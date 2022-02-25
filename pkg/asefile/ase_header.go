@@ -1,4 +1,4 @@
-package ase_binary
+package asefile
 
 // Some color definitions
 
@@ -108,6 +108,7 @@ type AsepriteFrame struct {
 	Layers                    []AsepriteLayerChunk2004
 	Cels                      []AsepriteCelChunk2005
 	Palettes                  []AsepritePaletteChunk2019
+	ColorProfiles             []AsepriteColorProfileChunk2007
 }
 
 /**

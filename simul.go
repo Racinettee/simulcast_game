@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	_ "image/png"
 	"log"
+	"os"
 
 	ebi "github.com/hajimehoshi/ebiten/v2"
 
+	"github.com/Racinettee/simul/pkg/asefile"
 	"github.com/Racinettee/simul/pkg/game"
 )
 
@@ -15,6 +18,12 @@ const (
 )
 
 func main() {
+	var aseFile asefile.AsepriteFile
+	spriteFile, _ := os.Open("sprites/player/Chica.aseprite")
+	if err := aseFile.Decode(spriteFile); err != nil {
+		log.Println(err)
+	}
+	fmt.Printf("Ase Header: %+v\n", aseFile.Header)
 	ebi.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebi.SetWindowTitle("Tiles (Ebiten Demo)")
 	g := &game.Game{}

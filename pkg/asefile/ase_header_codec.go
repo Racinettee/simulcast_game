@@ -1,12 +1,18 @@
-package ase_binary
+package asefile
 
 import (
 	"bytes"
 	"compress/zlib"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"log"
 )
+
+type AsepriteCodec interface {
+	Decode(r io.Reader) error
+	Encode(w io.Writer)
+}
 
 var ble = binary.LittleEndian
 
@@ -25,9 +31,14 @@ func EncodeAseString(w io.Writer, str string) {
 	binary.Write(w, ble, &buff)
 }
 
-func (aseHeader *AsepriteHeader) Decode(r io.Reader) {
+func (aseHeader *AsepriteHeader) Decode(r io.Reader) error {
 	binary.Read(r, ble, &aseHeader.FileSize)
 	binary.Read(r, ble, &aseHeader.MagicNumber)
+
+	if aseHeader.MagicNumber != 0xA5E0 {
+		return fmt.Errorf("Header magic number incorrect")
+	}
+
 	binary.Read(r, ble, &aseHeader.Frames)
 	binary.Read(r, ble, &aseHeader.WidthInPixels)
 	binary.Read(r, ble, &aseHeader.HeightInPixels)
@@ -46,6 +57,7 @@ func (aseHeader *AsepriteHeader) Decode(r io.Reader) {
 	binary.Read(r, ble, &aseHeader.GridWidth)
 	binary.Read(r, ble, &aseHeader.GridHeight)
 	binary.Read(r, ble, &aseHeader.reserved)
+	return nil
 }
 
 func (aseHeader *AsepriteHeader) Encode(w io.Writer) {
@@ -71,21 +83,35 @@ func (aseHeader *AsepriteHeader) Encode(w io.Writer) {
 	binary.Write(w, ble, &aseHeader.reserved)
 }
 
-func (aseFrame *AsepriteFrame) Decode(r io.Reader) {
+func (aseFrame *AsepriteFrame) Decode(r io.Reader) error {
 	binary.Read(r, ble, &aseFrame.BytesThisFrame)
 	binary.Read(r, ble, &aseFrame.MagicNumber)
+
+	if aseFrame.MagicNumber != 0xF1FA {
+		return fmt.Errorf("Frame magic number incorrect")
+	}
+
 	binary.Read(r, ble, &aseFrame.ChunksThisFrame)
 	binary.Read(r, ble, &aseFrame.FrameDurationMilliseconds)
 	binary.Read(r, ble, &aseFrame.reserved)
 	binary.Read(r, ble, &aseFrame.ChunksThisFrameExt)
+	fmt.Printf("Frame initial data: %+v\n", *aseFrame)
 	//
 	// Load n-amount of chunks
+	aseFrame.OldPalettes0004 = make([]AsepriteOldPaletteChunk0004, 0)
+	aseFrame.OldPalettes0011 = make([]AsepritePaletteChunk0011, 0)
+	aseFrame.Layers = make([]AsepriteLayerChunk2004, 0)
+	aseFrame.Cels = make([]AsepriteCelChunk2005, 0)
+	aseFrame.Palettes = make([]AsepritePaletteChunk2019, 0)
+	aseFrame.ColorProfiles = make([]AsepriteColorProfileChunk2007, 0)
+
 	loadChunks := 0
 	if aseFrame.ChunksThisFrameExt == 0 {
 		loadChunks = int(aseFrame.ChunksThisFrame)
 	} else {
 		loadChunks = int(aseFrame.ChunksThisFrameExt)
 	}
+	read := 0
 	for x := 0; x < loadChunks; x += 1 {
 		var chunkSize uint32
 		var chunkType uint16
@@ -97,24 +123,42 @@ func (aseFrame *AsepriteFrame) Decode(r io.Reader) {
 			var oldPalette0004 AsepriteOldPaletteChunk0004
 			oldPalette0004.Decode(r)
 			aseFrame.OldPalettes0004 = append(aseFrame.OldPalettes0004, oldPalette0004)
+			read += 1
 		case 0x0011:
 			var oldPalette0011 AsepritePaletteChunk0011
 			oldPalette0011.Decode(r)
 			aseFrame.OldPalettes0011 = append(aseFrame.OldPalettes0011, oldPalette0011)
+			read += 1
 		case 0x2004:
 			var layer AsepriteLayerChunk2004
 			layer.Decode(r)
 			aseFrame.Layers = append(aseFrame.Layers, layer)
+			read += 1
 		case 0x2005:
 			var cel AsepriteCelChunk2005
 			cel.Decode(r)
 			aseFrame.Cels = append(aseFrame.Cels, cel)
+			read += 1
+		case 0x2007:
+			var colProfile AsepriteColorProfileChunk2007
+			colProfile.Decode(r)
+			aseFrame.ColorProfiles = append(aseFrame.ColorProfiles, colProfile)
+			read += 1
 		case 0x2019:
 			var palette AsepritePaletteChunk2019
 			palette.Decode(r)
 			aseFrame.Palettes = append(aseFrame.Palettes, palette)
+			read += 1
+		default:
+			log.Printf("Unused chunk type: %X\n", chunkType)
 		}
 	}
+	if read != loadChunks {
+		fmt.Printf("Frame post data: %+v\n", *aseFrame)
+		return fmt.Errorf("Did not read expected amount of chunks")
+	}
+	fmt.Printf("Frame post data: %+v\n", *aseFrame)
+	return nil
 }
 
 func (aseFrame AsepriteFrame) Encode(w io.Writer) {
