@@ -97,6 +97,7 @@ type AsepriteHeader struct {
  */
 
 type AsepriteFrame struct {
+	parentHeader              *AsepriteHeader
 	BytesThisFrame            uint32
 	MagicNumber               uint16 // F1FA
 	ChunksThisFrame           uint16 // If this value is FFFF there "may" be more chunks to read
@@ -107,8 +108,9 @@ type AsepriteFrame struct {
 	OldPalettes0011           []AsepritePaletteChunk0011
 	Layers                    []AsepriteLayerChunk2004
 	Cels                      []AsepriteCelChunk2005
-	Palettes                  []AsepritePaletteChunk2019
 	ColorProfiles             []AsepriteColorProfileChunk2007
+	Tags                      AsepriteTagsChunk2018
+	Palettes                  []AsepritePaletteChunk2019
 }
 
 /**
@@ -217,6 +219,11 @@ type AsepriteLayerChunk2004 struct {
 	LayerName            string
 	// + if layer type = 2
 	TilesetIndex uint32
+	UserData     AsepriteUserDataChunk2020
+}
+
+func (layer *AsepriteLayerChunk2004) AddUserData(userData AsepriteUserDataChunk2020) {
+	layer.UserData = userData
 }
 
 /**
@@ -259,6 +266,7 @@ type AsepriteLayerChunk2004 struct {
 
 type AsepriteCelChunk2005 struct {
 	parentHeader *AsepriteHeader
+	chunkSize    uint32
 	LayerIndex   uint16
 	X, Y         int16
 	OpacityLevel byte
@@ -415,6 +423,11 @@ type AsepriteTagsChunk2018 struct {
 	NumTags   uint16
 	reserved1 [8]byte
 	Tags      []AsepriteTagsChunk2018Tag
+	UserData  []AsepriteUserDataChunk2020
+}
+
+func (tagsChunk *AsepriteTagsChunk2018) AddUserData(userDat AsepriteUserDataChunk2020) {
+	tagsChunk.UserData = append(tagsChunk.UserData, userDat)
 }
 
 type AsepriteTagsChunk2018Tag struct {

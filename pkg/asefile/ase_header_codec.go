@@ -14,6 +14,14 @@ type AsepriteCodec interface {
 	Encode(w io.Writer)
 }
 
+type AsepriteUserDatHolder interface {
+	AddUserData(AsepriteUserDataChunk2020)
+}
+
+func Last(list []AsepriteUserDatHolder) AsepriteUserDatHolder {
+	return list[len(list)-1]
+}
+
 var ble = binary.LittleEndian
 
 func DecodeAseString(r io.Reader) string {
@@ -102,8 +110,8 @@ func (aseFrame *AsepriteFrame) Decode(r io.Reader) error {
 	aseFrame.OldPalettes0011 = make([]AsepritePaletteChunk0011, 0)
 	aseFrame.Layers = make([]AsepriteLayerChunk2004, 0)
 	aseFrame.Cels = make([]AsepriteCelChunk2005, 0)
-	aseFrame.Palettes = make([]AsepritePaletteChunk2019, 0)
 	aseFrame.ColorProfiles = make([]AsepriteColorProfileChunk2007, 0)
+	aseFrame.Palettes = make([]AsepritePaletteChunk2019, 0)
 
 	loadChunks := 0
 	if aseFrame.ChunksThisFrameExt == 0 {
@@ -111,6 +119,7 @@ func (aseFrame *AsepriteFrame) Decode(r io.Reader) error {
 	} else {
 		loadChunks = int(aseFrame.ChunksThisFrameExt)
 	}
+	var lastUserdatHolder AsepriteUserDatHolder
 	read := 0
 	for x := 0; x < loadChunks; x += 1 {
 		var chunkSize uint32
@@ -133,9 +142,12 @@ func (aseFrame *AsepriteFrame) Decode(r io.Reader) error {
 			var layer AsepriteLayerChunk2004
 			layer.Decode(r)
 			aseFrame.Layers = append(aseFrame.Layers, layer)
+			lastUserdatHolder = &aseFrame.Layers[len(aseFrame.Layers)-1]
 			read += 1
 		case 0x2005:
 			var cel AsepriteCelChunk2005
+			cel.parentHeader = aseFrame.parentHeader
+			cel.chunkSize = chunkSize
 			cel.Decode(r)
 			aseFrame.Cels = append(aseFrame.Cels, cel)
 			read += 1
@@ -144,10 +156,21 @@ func (aseFrame *AsepriteFrame) Decode(r io.Reader) error {
 			colProfile.Decode(r)
 			aseFrame.ColorProfiles = append(aseFrame.ColorProfiles, colProfile)
 			read += 1
+		case 0x2018:
+			aseFrame.Tags.Decode(r)
+			lastUserdatHolder = &aseFrame.Tags
+			read += 1
 		case 0x2019:
 			var palette AsepritePaletteChunk2019
 			palette.Decode(r)
 			aseFrame.Palettes = append(aseFrame.Palettes, palette)
+			read += 1
+		case 0x2020:
+			var userDat AsepriteUserDataChunk2020
+			userDat.Decode(r)
+			if lastUserdatHolder != nil {
+				lastUserdatHolder.AddUserData(userDat)
+			}
 			read += 1
 		default:
 			log.Printf("Unused chunk type: %X\n", chunkType)
@@ -227,7 +250,7 @@ func (asePaletteChunk AsepritePaletteChunk0011) Encode(w io.Writer) {
 	}
 }
 
-func (aseLayerChunk *AsepriteLayerChunk2004) Decode(r io.Reader) {
+func (aseLayerChunk *AsepriteLayerChunk2004) Decode(r io.Reader) error {
 	binary.Read(r, ble, &aseLayerChunk.Flags)
 	binary.Read(r, ble, &aseLayerChunk.LayerType)
 	binary.Read(r, ble, &aseLayerChunk.LayerChildLevel)
@@ -240,6 +263,7 @@ func (aseLayerChunk *AsepriteLayerChunk2004) Decode(r io.Reader) {
 	if aseLayerChunk.LayerType == 2 {
 		binary.Read(r, ble, &aseLayerChunk.TilesetIndex)
 	}
+	return nil
 }
 
 func (aseLayerChunk AsepriteLayerChunk2004) Encode(w io.Writer) {
@@ -284,7 +308,10 @@ func (aseCelChunk *AsepriteCelChunk2005) Decode(r io.Reader) {
 	case 2:
 		binary.Read(r, ble, &aseCelChunk.WidthInPix)
 		binary.Read(r, ble, &aseCelChunk.HeightInPix)
-		zreader, err := zlib.NewReader(r)
+		bytesToRead := aseCelChunk.chunkSize - 26
+		bytesBuff := make([]byte, bytesToRead)
+		binary.Read(r, ble, bytesBuff)
+		zreader, err := zlib.NewReader(bytes.NewReader(bytesBuff))
 		if err != nil {
 			log.Println(err)
 		}
@@ -446,8 +473,8 @@ func (aseTags *AsepriteTagsChunk2018) Decode(r io.Reader) {
 	binary.Read(r, ble, &aseTags.NumTags)
 	binary.Read(r, ble, &aseTags.reserved1)
 	aseTags.Tags = make([]AsepriteTagsChunk2018Tag, aseTags.NumTags)
-	for _, tag := range aseTags.Tags {
-		tag.Decode(r)
+	for x := 0; x < int(aseTags.NumTags); x += 1 {
+		aseTags.Tags[x].Decode(r)
 	}
 }
 
@@ -486,8 +513,8 @@ func (asePaletteChunk *AsepritePaletteChunk2019) Decode(r io.Reader) {
 	binary.Read(r, ble, &asePaletteChunk.reserved)
 	asePaletteChunk.PaletteEntries =
 		make([]AsepritePaletteChunk2019Entry, asePaletteChunk.PaletteSize)
-	for _, paletteEntry := range asePaletteChunk.PaletteEntries {
-		paletteEntry.Decode(r)
+	for x := 0; x < len(asePaletteChunk.PaletteEntries); x += 1 {
+		asePaletteChunk.PaletteEntries[x].Decode(r)
 	}
 }
 
@@ -497,7 +524,9 @@ func (asePaletteEntry *AsepritePaletteChunk2019Entry) Decode(r io.Reader) {
 	binary.Read(r, ble, &asePaletteEntry.G)
 	binary.Read(r, ble, &asePaletteEntry.B)
 	binary.Read(r, ble, &asePaletteEntry.A)
-	asePaletteEntry.ColorName = DecodeAseString(r)
+	if asePaletteEntry.EntryFlags&0x01 == 1 {
+		asePaletteEntry.ColorName = DecodeAseString(r)
+	}
 }
 
 func (asePaletteChunk AsepritePaletteChunk2019) Encode(w io.Writer) {

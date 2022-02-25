@@ -15,6 +15,7 @@ func (aseFile *AsepriteFile) Decode(r io.Reader) error {
 	aseFile.Header.Decode(r)
 	aseFile.Frames = make([]AsepriteFrame, aseFile.Header.Frames)
 	for _, frame := range aseFile.Frames {
+		frame.parentHeader = &aseFile.Header
 		err := frame.Decode(r)
 		if err != nil {
 			return err
