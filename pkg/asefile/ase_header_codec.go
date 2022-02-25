@@ -44,7 +44,7 @@ func (aseHeader *AsepriteHeader) Decode(r io.Reader) error {
 	binary.Read(r, ble, &aseHeader.MagicNumber)
 
 	if aseHeader.MagicNumber != 0xA5E0 {
-		return fmt.Errorf("Header magic number incorrect")
+		return fmt.Errorf("header magic number incorrect")
 	}
 
 	binary.Read(r, ble, &aseHeader.Frames)
@@ -96,14 +96,13 @@ func (aseFrame *AsepriteFrame) Decode(r io.Reader) error {
 	binary.Read(r, ble, &aseFrame.MagicNumber)
 
 	if aseFrame.MagicNumber != 0xF1FA {
-		return fmt.Errorf("Frame magic number incorrect")
+		return fmt.Errorf("frame magic number incorrect")
 	}
 
 	binary.Read(r, ble, &aseFrame.ChunksThisFrame)
 	binary.Read(r, ble, &aseFrame.FrameDurationMilliseconds)
 	binary.Read(r, ble, &aseFrame.reserved)
 	binary.Read(r, ble, &aseFrame.ChunksThisFrameExt)
-	fmt.Printf("Frame initial data: %+v\n", *aseFrame)
 	//
 	// Load n-amount of chunks
 	aseFrame.OldPalettes0004 = make([]AsepriteOldPaletteChunk0004, 0)
@@ -177,10 +176,8 @@ func (aseFrame *AsepriteFrame) Decode(r io.Reader) error {
 		}
 	}
 	if read != loadChunks {
-		fmt.Printf("Frame post data: %+v\n", *aseFrame)
-		return fmt.Errorf("Did not read expected amount of chunks")
+		return fmt.Errorf("did not read expected amount of chunks")
 	}
-	fmt.Printf("Frame post data: %+v\n", *aseFrame)
 	return nil
 }
 
