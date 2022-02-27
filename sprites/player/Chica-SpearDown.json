@@ -1,0 +1,37 @@
+{ "frames": {
+   "Chica-SpearDown 0.aseprite": {
+    "frame": { "x": 0, "y": 0, "w": 16, "h": 38 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 38 },
+    "sourceSize": { "w": 16, "h": 38 },
+    "duration": 300
+   },
+   "Chica-SpearDown 1.aseprite": {
+    "frame": { "x": 16, "y": 0, "w": 16, "h": 38 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 38 },
+    "sourceSize": { "w": 16, "h": 38 },
+    "duration": 300
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3-beta10-x64",
+  "image": "Chica-SpearDown.png",
+  "format": "RGBA8888",
+  "size": { "w": 32, "h": 38 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "Spear", "opacity": 255, "blendMode": "normal" },
+   { "name": "HairOrnament", "opacity": 255, "blendMode": "normal" },
+   { "name": "Body", "opacity": 255, "blendMode": "normal" },
+   { "name": "<Collision>", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}
