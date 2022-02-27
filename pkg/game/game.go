@@ -14,7 +14,7 @@ import (
 	"github.com/lafriks/go-tiled/render"
 	"github.com/solarlune/resolv"
 
-	"github.com/Racinettee/simul/pkg/asefile"
+	"github.com/Racinettee/asefile"
 	"github.com/Racinettee/simul/pkg/camera"
 	"github.com/Racinettee/simul/pkg/player"
 	"github.com/Racinettee/simul/pkg/tiles"
