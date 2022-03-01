@@ -16,6 +16,7 @@ require (
 require (
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210727001814-0db043d8d5be // indirect
+	github.com/jessevdk/go-flags v1.5.0 // indirect
 	github.com/jezek/xgb v0.0.0-20210312150743-0e0f116e1240 // indirect
 	github.com/kvartborg/vector v0.0.0-20200419093813-2cba0cabb4f0 // indirect
 	github.com/tidwall/gjson v1.10.2 // indirect
