@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -13,31 +12,17 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-type OutFileTemplate struct {
+type outFileTemplate struct {
 	FileName string
 	// For each frame (key) list of points (value)
 	Points map[int][]int
 }
 
-func NewOutFileTemplate(fname string) OutFileTemplate {
-	return OutFileTemplate{
-		FileName: fname,
-		Points:   make(map[int][]int),
-	}
-}
-
-type OutputTemplate struct {
+type outputTemplate struct {
 	// The package to insert into
 	Package string
 	// The list of files with respective frames -> shapes
-	Files []OutFileTemplate
-}
-
-func NewOutputTemplate(pkg string) OutputTemplate {
-	return OutputTemplate{
-		Package: pkg,
-		Files:   make([]OutFileTemplate, 0),
-	}
+	Files []outFileTemplate
 }
 
 var outputTemplateStr string = `package {{.Package}}
@@ -47,11 +32,6 @@ var {{.FileName}}Shapes = map[int][]int{ {{ range $frame, $points := .Points }}
 }
 {{ end }}`
 
-/*{{ $fname := .Name }}
-{{ range .Shapes }}
-var {{$fname}}{{.Frame}} map[int] []int{
-
-}*/
 type Pointi struct {
 	X, Y int
 }
@@ -71,13 +51,19 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	mainResult := NewOutputTemplate(opts.Package)
+	mainResult := outputTemplate{
+		Package: opts.Package,
+		Files:   make([]outFileTemplate, 0),
+	}
 
 	inFiles := strings.Split(opts.InFiles, ",")
 
 	// For each file in inFiles we parse the ase file looking for a collision layer
 	for _, file := range inFiles {
-		outResult := NewOutFileTemplate(transformTitle(file))
+		outResult := outFileTemplate{
+			FileName: transformTitle(file),
+			Points:   make(map[int][]int),
+		}
 		var aseFile asefile.AsepriteFile
 		err = aseFile.DecodeFile(file)
 		if err != nil {
@@ -137,17 +123,17 @@ func main() {
 			// With all high values (points near the top have lower y value)
 			// iterate them forward and generate the coordinates
 			for _, point := range highs {
-				result = append(result, point.X, point.Y)
+				// Add the point - but including the offset of the cel for the final data
+				result = append(result, point.X+int(cel.X), point.Y+int(cel.Y))
 			}
 			for i := len(lows) - 1; i >= 0; i-- {
-				result = append(result, lows[i].X, lows[i].Y)
+				result = append(result, lows[i].X+int(cel.X), lows[i].Y+int(cel.Y))
 			}
 			outResult.Points[framei] = result
 		}
 		mainResult.Files = append(mainResult.Files, outResult)
 	}
 
-	fmt.Printf("%+v\n", mainResult)
 	t, err := template.New("shapes").Parse(outputTemplateStr)
 
 	if err != nil {
