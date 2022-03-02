@@ -1,45 +1,51 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
+	"text/template"
+	"unicode"
 
 	"github.com/Racinettee/asefile"
 	"github.com/jessevdk/go-flags"
 )
 
-type outFileTemplate struct {
+type OutFileTemplate struct {
 	FileName string
 	// For each frame (key) list of points (value)
 	Points map[int][]int
 }
 
-func NewOutFileTemplate(fname string) outFileTemplate {
-	return outFileTemplate{
+func NewOutFileTemplate(fname string) OutFileTemplate {
+	return OutFileTemplate{
 		FileName: fname,
 		Points:   make(map[int][]int),
 	}
 }
 
-type outputTemplate struct {
+type OutputTemplate struct {
 	// The package to insert into
 	Package string
 	// The list of files with respective frames -> shapes
-	Files []outFileTemplate
+	Files []OutFileTemplate
 }
 
-func NewOutputTemplate(pkg string) outputTemplate {
-	return outputTemplate{
+func NewOutputTemplate(pkg string) OutputTemplate {
+	return OutputTemplate{
 		Package: pkg,
-		Files:   make([]outFileTemplate, 0),
+		Files:   make([]OutFileTemplate, 0),
 	}
 }
 
-var template string = `package {{.Package}}
+var outputTemplateStr string = `package {{.Package}}
 {{ range .Files }}
-var FileName
-{{ end }}
-`
+var {{.FileName}}Shapes = map[int][]int{ {{ range $frame, $points := .Points }}
+	{{ $frame }}: { {{ range $index, $elem := $points }}{{ if $index }},{{ end }} {{ $elem }}{{ end }} },{{ end }}
+}
+{{ end }}`
 
 /*{{ $fname := .Name }}
 {{ range .Shapes }}
@@ -71,6 +77,7 @@ func main() {
 
 	// For each file in inFiles we parse the ase file looking for a collision layer
 	for _, file := range inFiles {
+		outResult := NewOutFileTemplate(transformTitle(file))
 		var aseFile asefile.AsepriteFile
 		err = aseFile.DecodeFile(file)
 		if err != nil {
@@ -90,52 +97,79 @@ func main() {
 			println("No collision layers - use <Collision> to define collision layers")
 			continue
 		}
-	}
+		// For each frame we want to scan the pixels and find all the ones of a certain color
+		for framei, frame := range aseFile.Frames {
 
-	// For each frame we want to scan the pixels and find all the ones of a certain color
-	for framei, frame := range aseFile.Frames {
+			cel := frame.Cels[collisLayer]
+			dat := cel.RawCelData
+			if len(dat) == 0 {
+				continue
+			}
 
-		cel := frame.Cels[collisLayer]
-		dat := cel.RawCelData
-		if len(dat) == 0 {
-			continue
-		}
+			points := make([]Pointi, 0)
 
-		points := make([]Pointi, 0)
-
-		// For now, We'll just go with 255,0,255,255 as our color
-		w, h := cel.WidthInPix, cel.HeightInPix
-		offset := 0
-		for y := 0; y < int(h); y += 1 {
-			for x := 0; x < int(w); x, offset = x+1, offset+4 {
-				r, g, b, a := dat[offset], dat[offset+1], dat[offset+2], dat[offset+3]
-				if r == 255 && g == 0 && b == 255 && a == 255 {
-					points = append(points, Pointi{x, y})
+			// For now, We'll just go with 255,0,255,255 as our color
+			w, h := cel.WidthInPix, cel.HeightInPix
+			offset := 0
+			for y := 0; y < int(h); y += 1 {
+				for x := 0; x < int(w); x, offset = x+1, offset+4 {
+					r, g, b, a := dat[offset], dat[offset+1], dat[offset+2], dat[offset+3]
+					if r == 255 && g == 0 && b == 255 && a == 255 {
+						points = append(points, Pointi{x, y})
+					}
 				}
 			}
-		}
-		// Sort the points first by X order
-		sort.Sort(ByPointX(points))
-		// Sort the highest and lowest points by the middle of the median y value
-		highs := make([]Pointi, 0)
-		lows := make([]Pointi, 0)
+			// Sort the points first by X order
+			sort.Sort(ByPointX(points))
+			// Sort the highest and lowest points by the middle of the median y value
+			highs := make([]Pointi, 0)
+			lows := make([]Pointi, 0)
 
-		middle := int(h / 2)
-		for _, point := range points {
-			if point.Y <= middle {
-				highs = append(highs, point)
-			} else {
-				lows = append(lows, point)
+			middle := int(h / 2)
+			for _, point := range points {
+				if point.Y <= middle {
+					highs = append(highs, point)
+				} else {
+					lows = append(lows, point)
+				}
 			}
+			result := make([]int, 0)
+			// With all high values (points near the top have lower y value)
+			// iterate them forward and generate the coordinates
+			for _, point := range highs {
+				result = append(result, point.X, point.Y)
+			}
+			for i := len(points) - 1; i >= 0; i-- {
+				result = append(result, points[i].X, points[i].Y)
+			}
+			outResult.Points[framei] = result
 		}
-		result := make([]int, 0)
-		// With all high values (points near the top have lower y value)
-		// iterate them forward and generate the coordinates
-		for _, point := range highs {
-			result = append(result, point.X, point.Y)
-		}
-		for i := len(points) - 1; i >= 0; i-- {
-			result = append(result, points[i].X, points[i].Y)
-		}
+		mainResult.Files = append(mainResult.Files, outResult)
 	}
+
+	fmt.Printf("%+v\n", mainResult)
+	t, err := template.New("shapes").Parse(outputTemplateStr)
+
+	if err != nil {
+		panic(err)
+	}
+
+	outFile, err := os.Create(opts.OutFile)
+
+	if err != nil {
+		panic(err)
+	}
+
+	t.Execute(outFile, &mainResult)
+}
+
+func transformTitle(title string) string {
+	str := strings.Title(strings.TrimSuffix(filepath.Base(title), filepath.Ext(title)))
+	return strings.Map(func(r rune) rune {
+		switch {
+		case unicode.IsDigit(r), unicode.IsLetter(r):
+			return r
+		}
+		return -1
+	}, str)
 }
