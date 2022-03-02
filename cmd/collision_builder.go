@@ -139,8 +139,8 @@ func main() {
 			for _, point := range highs {
 				result = append(result, point.X, point.Y)
 			}
-			for i := len(points) - 1; i >= 0; i-- {
-				result = append(result, points[i].X, points[i].Y)
+			for i := len(lows) - 1; i >= 0; i-- {
+				result = append(result, lows[i].X, lows[i].Y)
 			}
 			outResult.Points[framei] = result
 		}
