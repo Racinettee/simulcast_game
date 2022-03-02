@@ -26,6 +26,7 @@ type outputTemplate struct {
 }
 
 var outputTemplateStr string = `package {{.Package}}
+// This code is generated, do not edit
 {{ range .Files }}
 var {{.FileName}}Shapes = map[int][]int{ {{ range $frame, $points := .Points }}
 	{{ $frame }}: { {{ range $index, $elem := $points }}{{ if $index }},{{ end }} {{ $elem }}{{ end }} },{{ end }}

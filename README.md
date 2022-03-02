@@ -5,7 +5,7 @@ Simul is a new work in progress, open source game with the primary goal of emula
 ### Getting started:
 - First see the install page from the ebiten website and follow the instructions that pertain to your system to install the necessary dependencies: [ebiten](https://ebiten.org/documents/install.html)
 - Install the go compiler for your system: [Go](https://go.dev/dl/)
-- `cd simulcast_game` then `go run simul.go`
+- `cd simulcast_game` then `go generate ./pkg/...` and then `go run simul.go`
 
 ### Project goals:
 
@@ -18,4 +18,7 @@ Simul is a new work in progress, open source game with the primary goal of emula
 - Tiled
 - Aseprite
 - A text editor
+- go install
+  - golang.org/x/tools/cmd/stringer@latest
+  - github.com/Racinettee/simulcast_game/cmd/collision_builder@latest
 - others to potentially come...?
