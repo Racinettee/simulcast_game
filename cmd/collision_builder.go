@@ -85,15 +85,12 @@ func main() {
 		}
 		// For each frame we want to scan the pixels and find all the ones of a certain color
 		for framei, frame := range aseFile.Frames {
-
 			cel := frame.Cels[collisLayer]
 			dat := cel.RawCelData
 			if len(dat) == 0 {
 				continue
 			}
-
 			points := make([]Pointi, 0)
-
 			// For now, We'll just go with 255,0,255,255 as our color
 			w, h := cel.WidthInPix, cel.HeightInPix
 			offset := 0
@@ -139,13 +136,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	outFile, err := os.Create(opts.OutFile)
 
 	if err != nil {
 		panic(err)
 	}
-
 	t.Execute(outFile, &mainResult)
 }
 
