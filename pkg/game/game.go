@@ -14,7 +14,6 @@ import (
 	"github.com/lafriks/go-tiled/render"
 	"github.com/solarlune/resolv"
 
-	"github.com/Racinettee/asefile"
 	"github.com/Racinettee/simul/pkg/camera"
 	"github.com/Racinettee/simul/pkg/player"
 	"github.com/Racinettee/simul/pkg/tiles"
@@ -56,7 +55,6 @@ type Game struct {
 	player player.PlayerImpl
 	count  int
 	Config Config
-	aseImg *ebi.Image
 }
 
 func (g *Game) Init() {
@@ -65,29 +63,6 @@ func (g *Game) Init() {
 	if err != nil {
 		log.Printf("Failed to load configuration")
 	}
-	var aseFile asefile.AsepriteFile
-	if err := aseFile.DecodeFile("sprites/player/Chica.aseprite"); err != nil {
-		log.Println(err)
-	}
-	g.aseImg = ebi.NewImage(int(aseFile.Header.WidthInPixels), int(aseFile.Header.HeightInPixels))
-	for _, cel := range aseFile.Frames[0].Cels {
-		//cel := aseFile.Frames[0].Cels[0]
-		dat := cel.RawCelData
-		w, h := cel.WidthInPix, cel.HeightInPix //aseFile.Header.WidthInPixels, aseFile.Header.HeightInPixels
-		offset := 0
-		for y := 0; y < int(h); y += 1 {
-			for x := 0; x < int(w); x, offset = x+1, offset+4 {
-				col := color.RGBA{dat[offset], dat[offset+1], dat[offset+2], dat[offset+3]}
-				g.aseImg.Set(int(cel.X)+x, int(cel.Y)+y, col)
-			}
-		}
-	}
-	//decImg, _, err := image.Decode (bytes.NewReader(aseFile.Frames[0].Cels[0].RawCelData))
-
-	//if err != nil {
-	//	log.Println(err)
-	//}
-	//g.aseImg = ebi.NewImageFromImage(decImg)
 	g.camera = camera.NewFollowCam(screenWidth, screenHeight, 0, 0, 1, 0)
 	g.camera.Followee = &g.player
 	g.player.SceneEnter()
@@ -116,8 +91,6 @@ func (g *Game) Draw(screen *ebi.Image) {
 	}
 	// Publish
 	g.camera.Blit(screen)
-
-	screen.DrawImage(g.aseImg, g.camera.GetTranslation(10, 10))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
