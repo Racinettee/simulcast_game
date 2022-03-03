@@ -9,4 +9,5 @@ type PlayerDat struct {
 	CurrentHealth int                       `json:"current_health"`
 	CurrentWealth int                       `json:"current_wealth"`
 	Inventory     map[string]component.Item `json:"inventory"`
+	EquipedWeapon component.Weapon
 }

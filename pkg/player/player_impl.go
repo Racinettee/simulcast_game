@@ -22,13 +22,40 @@ const (
 	frameNum    = 8
 )
 
+type aseSprite struct {
+	ImageDat  *ebi.Image
+	ImageInfo *ase.File
+}
+
+func LoadSprite(path string) aseSprite {
+	var result aseSprite
+	result.ImageInfo = ase.Open(path)
+	var err error
+	result.ImageDat, _, err = ebiutil.NewImageFromFile("sprites/player/" + result.ImageInfo.ImagePath)
+
+	if err != nil {
+		log.Println(err)
+	}
+	return result
+}
+
+var playerAnimPool map[string]aseSprite
+
+func init() {
+	playerAnimPool["SpearDown"] = LoadSprite("sprites/player/Chica-SpearDown.json")
+}
+
 type PlayerImpl struct {
+	data   *PlayerDat
 	pos    f64.Vec2
 	Body   *resolv.Object
-	Img    *ebi.Image
-	Sprite *ase.File
+	Sprite aseSprite
 	State  comp.ActorState
 	Dir    comp.Direction
+}
+
+func (player *PlayerImpl) Init(data *PlayerDat) {
+	player.data = data
 }
 
 // Positioned
@@ -142,4 +169,14 @@ func (player *PlayerImpl) OnAnimExit() func() {
 
 func (p *PlayerImpl) StateStr() string {
 	return p.State.String() + p.Dir.String()
+}
+
+func (p *PlayerImpl) attackStateBegin() {
+	p.State = comp.Attack
+	animName := p.data.EquipedWeapon.Type.String() + p.Dir.String()
+	playerAnimPool[animName]
+}
+
+func (p *PlayerImpl) attackStateEnd() {
+
 }

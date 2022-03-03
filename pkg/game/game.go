@@ -51,10 +51,11 @@ func init() {
 }
 
 type Game struct {
-	camera camera.FollowCam
-	player player.PlayerImpl
-	count  int
-	Config Config
+	camera     camera.FollowCam
+	playerData player.PlayerDat
+	playerImpl player.PlayerImpl
+	count      int
+	Config     Config
 }
 
 func (g *Game) Init() {
@@ -64,15 +65,16 @@ func (g *Game) Init() {
 		log.Printf("Failed to load configuration")
 	}
 	g.camera = camera.NewFollowCam(screenWidth, screenHeight, 0, 0, 1, 0)
-	g.camera.Followee = &g.player
-	g.player.SceneEnter()
-	space.Add(g.player.Body)
+	g.camera.Followee = &g.playerImpl
+	g.playerImpl.Init(&g.playerData)
+	g.playerImpl.SceneEnter()
+	space.Add(g.playerImpl.Body)
 }
 
 func (g *Game) Update() error {
 	g.count++
 
-	g.player.Update(g.count)
+	g.playerImpl.Update(g.count)
 
 	g.camera.Update(g.count)
 
@@ -84,7 +86,7 @@ func (g *Game) Draw(screen *ebi.Image) {
 	// Map
 	g.camera.Surface.DrawImage(mapImage, g.camera.GetTranslation(0, 0))
 	// Character
-	g.player.Render(&g.camera)
+	g.playerImpl.Render(&g.camera)
 
 	if g.Config.DrawCollisionShapes {
 		g.DrawCollisions()
@@ -98,7 +100,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func (g *Game) DrawCollisions() {
-	pX, pY := g.camera.GetScreenCoords(g.player.Body.X, g.player.Body.Y)
+	pX, pY := g.camera.GetScreenCoords(g.playerImpl.Body.X, g.playerImpl.Body.Y)
 	pX -= frameWidth / 2
 	pY -= frameHeight / 2
 	// Draw collisions
