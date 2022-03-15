@@ -4,3 +4,9 @@ DrawCollisionShapes = false
 
 # General config
 ResourcePath = "."
+
+# Window
+[window]
+Title="Blue"
+Width=200
+Height=200

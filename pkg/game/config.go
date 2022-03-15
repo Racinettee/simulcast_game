@@ -4,6 +4,11 @@ import "log"
 import "github.com/fsnotify/fsnotify"
 import "github.com/BurntSushi/toml"
 
+type WindowConfig struct {
+    Title string
+    Width, Height int
+}
+
 type Config struct {
     // If the file related to this struct should be reloaded into this stucture when its contents change
     HotReloadConfig bool
@@ -14,7 +19,24 @@ type Config struct {
 	// Resources
 	ResourcePath string
 
+	Window WindowConfig
+
+	game *Game
 	exit chan bool
+}
+
+func DefaultConfig(g *Game) Config {
+    return Config {
+        HotReloadConfig: false,
+        DrawCollisionShapes: false,
+        ResourcePath: ".",
+        Window: WindowConfig {
+            Title: "Default Window Title",
+            Width: 240,
+            Height: 120,
+        },
+        game: g,
+    }
 }
 
 func (conf *Config) StartWatching(what string) {
@@ -37,7 +59,15 @@ func (conf *Config) StartWatching(what string) {
                 case event := <-watcher.Events:
                     log.Printf("%+v\n", event)
                     if event.Op&fsnotify.Write == fsnotify.Write && event.Name == "simul_conf.toml" {
-                        toml.DecodeFile("simul_conf.toml", &conf)
+                        newConf := DefaultConfig(conf.game)
+                        _, err := toml.DecodeFile("simul_conf.toml", &newConf)
+                        if err != nil {
+                            log.Println(err)
+                        }
+                        conf.game.eventQueue<- func() {
+                            *conf = newConf
+                            conf.game.ConfigChange()
+                        }
                     }
 
                 case err := <-watcher.Errors:
@@ -48,5 +78,11 @@ func (conf *Config) StartWatching(what string) {
                 }
             }
         }()
+    }
+}
+
+func (conf *Config) StopWatching() {
+    if conf.exit != nil {
+        conf.exit<- true
     }
 }

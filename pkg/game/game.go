@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	screenWidth  = 240
-	screenHeight = 240
 	frameWidth   = 32
 	frameHeight  = 32
 )
@@ -55,22 +53,34 @@ type Game struct {
 	player player.PlayerImpl
 	count  int
 	Config Config
+	eventQueue chan func()
 }
 
 func (g *Game) Init() {
+    g.eventQueue = make(chan func())
+    g.Config = DefaultConfig(g)
 	_, err := toml.DecodeFile("simul_conf.toml", &g.Config)
+
+    g.camera = camera.NewFollowCam(g.Config.Window.Width, g.Config.Window.Height, 0, 0, 1, 0)
+    g.ConfigChange()
+
     g.Config.StartWatching("simul_conf.toml")
 
 	if err != nil {
 		log.Printf("Failed to load configuration")
 	}
-	g.camera = camera.NewFollowCam(screenWidth, screenHeight, 0, 0, 1, 0)
 	g.camera.Followee = &g.player
 	g.player.SceneEnter()
 	space.Add(g.player.Body)
 }
 
+func (g *Game) Shutdown() {
+    g.Config.StopWatching()
+}
+
 func (g *Game) Update() error {
+    g.ProcessEvent()
+
 	g.count++
 
 	g.player.Update(g.count)
@@ -95,7 +105,7 @@ func (g *Game) Draw(screen *ebi.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
+	return g.Config.Window.Width, g.Config.Window.Height
 }
 
 func (g *Game) DrawCollisions() {
@@ -121,6 +131,22 @@ func (g *Game) DrawCollisions() {
 			sX, sY := g.camera.GetScreenCoords(obj.X, obj.Y)
 			ebiutil.DrawRect(g.camera.Surface, sX, sY, obj.W, obj.H, color.RGBA{255, 125, 125, 100})
 		}
-
 	}
+}
+
+func (g *Game) ProcessEvent() {
+    select {
+        case callable, ok := <-g.eventQueue:
+            if ok {
+                callable()
+            }
+        default:
+            break
+    }
+}
+
+func (g *Game) ConfigChange() {
+    ebi.SetWindowSize(g.Config.Window.Width*2, g.Config.Window.Height*2)
+    ebi.SetWindowTitle(g.Config.Window.Title)
+    g.camera.Resize(g.Config.Window.Width, g.Config.Window.Height)
 }
