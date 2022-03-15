@@ -1,7 +1,7 @@
 package player
 
 import (
-	"fmt"
+	//"fmt"
 	"image"
 	"log"
 
@@ -129,7 +129,7 @@ func (player *PlayerImpl) OnAnimExit() func() {
 		currTag := player.Sprite.CurrentTag
 
 		if currIndex == currTag.Start && prevIndex == currTag.End {
-			fmt.Printf("Player: %+v - %v exited\n", player, currTag.Name)
+			//fmt.Printf("Player: %+v - %v exited\n", player, currTag.Name)
 			switch currTag.Name {
 			case "SpearDown":
 				player.State = comp.Idle

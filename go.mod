@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/BurntSushi/toml v1.0.0
+	github.com/fsnotify/fsnotify v1.5.1
 	github.com/hajimehoshi/ebiten/v2 v2.2.5
 	github.com/lafriks/go-tiled v0.7.0
 	github.com/melonfunction/ebiten-camera v0.0.0-20220108183711-5c8a2c471904

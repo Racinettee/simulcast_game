@@ -1,3 +1,4 @@
+HotReloadConfig = true
 # DrawCollisionShapes is for debugging
 DrawCollisionShapes = false
 

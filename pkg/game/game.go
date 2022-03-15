@@ -59,6 +59,7 @@ type Game struct {
 
 func (g *Game) Init() {
 	_, err := toml.DecodeFile("simul_conf.toml", &g.Config)
+    g.Config.StartWatching("simul_conf.toml")
 
 	if err != nil {
 		log.Printf("Failed to load configuration")
