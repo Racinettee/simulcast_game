@@ -1,0 +1,60 @@
+{ "frames": {
+   "Chica-Idle-Down 0.aseprite": {
+    "frame": { "x": 0, "y": 0, "w": 17, "h": 29 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 17, "h": 29 },
+    "sourceSize": { "w": 17, "h": 29 },
+    "duration": 100
+   },
+   "Chica-Idle-Down 1.aseprite": {
+    "frame": { "x": 17, "y": 0, "w": 17, "h": 29 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 17, "h": 29 },
+    "sourceSize": { "w": 17, "h": 29 },
+    "duration": 100
+   },
+   "Chica-Idle-Down 2.aseprite": {
+    "frame": { "x": 34, "y": 0, "w": 17, "h": 29 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 17, "h": 29 },
+    "sourceSize": { "w": 17, "h": 29 },
+    "duration": 100
+   },
+   "Chica-Idle-Down 3.aseprite": {
+    "frame": { "x": 51, "y": 0, "w": 17, "h": 29 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 17, "h": 29 },
+    "sourceSize": { "w": 17, "h": 29 },
+    "duration": 100
+   },
+   "Chica-Idle-Down 4.aseprite": {
+    "frame": { "x": 68, "y": 0, "w": 17, "h": 29 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 17, "h": 29 },
+    "sourceSize": { "w": 17, "h": 29 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "http://www.aseprite.org/",
+  "version": "1.3-beta14-x64",
+  "image": "Chica-Idle-Down.png",
+  "format": "RGBA8888",
+  "size": { "w": 85, "h": 29 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "IdleDown", "from": 0, "to": 4, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "Layer 1", "opacity": 255, "blendMode": "normal" },
+   { "name": "Layer 2", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}
