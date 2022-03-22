@@ -13,7 +13,7 @@ func main() {
 	g := &game.Game{}
 	g.Init()
 	if err := ebi.RunGame(g); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	g.Shutdown()
 }
