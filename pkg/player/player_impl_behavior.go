@@ -8,7 +8,7 @@ import (
 
 // Behavior
 func (player *PlayerImpl) Update(tick int) {
-	player.Sprite.Update((1 / 60.0)) //float32(.5 / 60.0))
+	animationManager.Update() //float32(.5 / 60.0))
 
 	// If player is already in the attacking state then
 	// we want to block movements or other actions being performed
@@ -18,7 +18,7 @@ func (player *PlayerImpl) Update(tick int) {
 	// Place player into attacking state
 	if inpututil.IsKeyJustPressed(ebi.KeySpace) {
 		player.State = comp.Attack
-		player.Sprite.Play("SpearDown")
+		animationManager.Play("SpearDown")
 		return
 	}
 
@@ -66,8 +66,8 @@ func (player *PlayerImpl) Update(tick int) {
 	player.State = currentState
 	switch currentState {
 	case comp.Idle:
-		player.Sprite.Play("IdleDown")
+		animationManager.Play("IdleDown")
 	case comp.Walk:
-		player.Sprite.Play("WalkDown")
+		animationManager.Play("WalkDown")
 	}
 }
