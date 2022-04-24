@@ -4,6 +4,8 @@ import (
 	//"fmt"
 	"image"
 	"log"
+	"path/filepath"
+	"strings"
 
 	comp "github.com/Racinettee/simul/pkg/component"
 	ebi "github.com/hajimehoshi/ebiten/v2"
@@ -29,6 +31,49 @@ type PlayerImpl struct {
 	State  comp.ActorState
 	Dir    comp.Direction
 }
+
+type Animation struct {
+	Img    *ebi.Image
+	Sprite *ase.File
+}
+
+type AnimationManager struct {
+	Animation        map[string]Animation
+	CurrentAnimation Animation
+}
+
+func (animManager *AnimationManager) LoadAnimation(texture, animationDat string) {
+	img, _, err := ebiutil.NewImageFromFile("sprites/" + texture)
+	if err != nil {
+		log.Println(err)
+	}
+	animManager.Animation[strings.TrimSuffix(filepath.Base(texture), filepath.Ext(texture))] = Animation{
+		Sprite: ase.Open(animationDat),
+		Img:    img,
+	}
+}
+
+func (animManager AnimationManager) GetSprite(sprite string) *ase.File {
+	return animManager.Animation[sprite].Sprite
+}
+
+func (animManager AnimationManager) GetImage(sprite string) *ebi.Image {
+	return animManager.Animation[sprite].Img
+}
+
+func (animManager AnimationManager) GetAnimation(sprite string) Animation {
+	return animManager.Animation[sprite]
+}
+
+func (animManager *AnimationManager) SetCurrentAnimation(sprite string) bool {
+	newAnim, ok := animManager.Animation[sprite]
+	if ok {
+		animManager.CurrentAnimation = newAnim
+	}
+	return ok
+}
+
+func (animManager *AnimationManager) PlayCurrent() {}
 
 // Positioned
 func (player *PlayerImpl) Pos() f64.Vec2 { return player.pos }
