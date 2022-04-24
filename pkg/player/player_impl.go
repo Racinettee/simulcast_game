@@ -8,7 +8,6 @@ import (
 	comp "github.com/Racinettee/simul/pkg/component"
 	ebi "github.com/hajimehoshi/ebiten/v2"
 	ebiutil "github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	ase "github.com/solarlune/goaseprite"
 	"github.com/solarlune/resolv"
 	"golang.org/x/image/math/f64"
@@ -58,68 +57,6 @@ func (player *PlayerImpl) Render(renderer comp.Renderer) {
 	op.GeoM.Translate(-float64(frameWidth)/2, -float64(frameHeight)/2)
 	renderer.RenderItem(player.Img.SubImage(image.Rect(player.Sprite.CurrentFrameCoords())).(*ebi.Image), op)
 	ebiutil.DebugPrint(renderer.ScreenSurface(), player.StateStr())
-}
-
-// Behavior
-func (player *PlayerImpl) Update(tick int) {
-	player.Sprite.Update((1 / 60.0)) //float32(.5 / 60.0))
-
-	// If player is already in the attacking state then
-	// we want to block movements or other actions being performed
-	if player.State == comp.Attack {
-		return
-	}
-	// Place player into attacking state
-	if inpututil.IsKeyJustPressed(ebi.KeySpace) {
-		player.State = comp.Attack
-		player.Sprite.Play("SpearDown")
-		return
-	}
-
-	currentState := comp.Idle
-
-	hV := float64(0)
-	vV := float64(0)
-
-	// Move the player, and assign walking state
-	if ebi.IsKeyPressed(ebi.KeyA) {
-		hV -= 1
-		currentState = comp.Walk
-	}
-
-	if ebi.IsKeyPressed(ebi.KeyD) {
-		hV += 1
-		currentState = comp.Walk
-	}
-
-	if ebi.IsKeyPressed(ebi.KeyW) {
-		vV -= 1
-		currentState = comp.Walk
-	}
-
-	if ebi.IsKeyPressed(ebi.KeyS) {
-		vV += 1
-		currentState = comp.Walk
-	}
-	// Check collision with terrain objects
-	if collision := player.Body.Check(hV, vV); collision != nil {
-		hV, vV = 0, 0
-		currentState = comp.Idle
-	}
-
-	player.pos[0] += hV
-	player.pos[1] += vV
-	player.Body.X, player.Body.Y = player.pos[0]-(frameWidth/2), player.pos[1]-(frameHeight/2)
-	player.Body.Update()
-
-	// Play the correct animation
-	player.State = currentState
-	switch currentState {
-	case comp.Idle:
-		player.Sprite.Play("IdleDown")
-	case comp.Walk:
-		player.Sprite.Play("WalkDown")
-	}
 }
 
 func (player *PlayerImpl) OnAnimExit() func() {
