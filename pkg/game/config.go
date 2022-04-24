@@ -15,15 +15,15 @@ type WindowConfig struct {
 type Config struct {
 	// If the file related to this struct should be reloaded into this stucture when its contents change
 	HotReloadConfig bool
-
-	// Debug aid
+	// If internal game entities can hotload their assets when changed
+	HotReloadAssets bool
+	// Debugging aid - will draw collision geometry over entities
 	DrawCollisionShapes bool
-
 	// Resources
 	ResourcePath string
-
+	// The size of the window and its title
 	Window WindowConfig
-
+	// Reference to the game which will delegate out messages
 	game *Game
 	exit chan bool
 }

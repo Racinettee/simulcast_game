@@ -10,7 +10,11 @@
             "request": "launch",
             "mode": "auto",
             "program": "${fileDirname}",
-            "args": ["-i", "../../sprites/player/Chica-SpearDown.aseprite", "-o", "chica-shapes.go", "-p", "shapes"]
+            "args": [
+                //"-i", "../../sprites/player/Chica-SpearDown.aseprite;../../sprites/player/Chica-WalkDown.aseprite;../../sprites/player/Chica-Idle-Down.aseprite",
+                //"-o", "chica-shapes.go", "-p", "shapes"]
+                "-c"
+            ]
         }
     ]
 }

@@ -9,6 +9,7 @@ import (
 	"text/template"
 	"unicode"
 
+	"github.com/BurntSushi/toml"
 	"github.com/Racinettee/asefile"
 	"github.com/Racinettee/generics"
 	"github.com/jessevdk/go-flags"
@@ -44,23 +45,26 @@ func (a ByPointX) Len() int           { return len(a) }
 func (a ByPointX) Less(i, j int) bool { return a[i].X < a[j].X }
 func (a ByPointX) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
+type options struct {
+	Config  bool   `short:"c" description:"Use config file instead of the other flags"`
+	InFiles string `short:"i" description:"List of semi-colon seperated file paths"`
+	OutFile string `short:"o" description:"The name of the output file to create"`
+	Package string `short:"p" description:"The package name to write into the out file"`
+}
+
 func main() {
-	var opts struct {
-		InFiles string `short:"i"`
-		OutFile string `short:"o"`
-		Package string `short:"p"`
-	}
+	var opts options
 	_, err := flags.Parse(&opts)
 	if err != nil {
 		panic(err)
 	}
+	inFiles, outFile, pkg := config(opts)
 	mainResult := outputTemplate{
-		Package: opts.Package,
+		Package: pkg,
 		Files:   make([]outputShape, 0),
 	}
-
 	// For each file in inFiles we parse the ase file looking for a collision layer
-	for _, file := range strings.Split(opts.InFiles, ",") {
+	for _, file := range inFiles {
 		mainResult.Files = append(mainResult.Files, collectCollisionData(file)...)
 	}
 
@@ -68,11 +72,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	outFile, err := os.Create(opts.OutFile)
+	of, err := os.Create(outFile)
 	if err != nil {
 		panic(err)
 	}
-	t.Execute(outFile, &mainResult)
+	t.Execute(of, &mainResult)
 }
 
 func transformTitle(title string) string {
@@ -106,7 +110,7 @@ func collectCollisionData(file string) []outputShape {
 	}
 	// If there was no matching layers then return from this function to move on
 	if collisLayers.Len() == 0 {
-		println("No collision layers - use <HitBox> or <HurtBox> to define collision layers")
+		log.Printf("no collision layers in %v - use <HitBox> or <HurtBox> to define collision layers\n", file)
 		return results
 	}
 	// For each collision layer we need to scan the frames and collect all the points
@@ -167,4 +171,29 @@ func parseFrame(aseFile asefile.AsepriteFile, file string, layer generics.Pair[i
 		outResult.Points[framei] = result
 	}
 	return outResult
+}
+
+type assetConfig struct {
+	Package   string
+	AssetPath string
+	OutFile   string
+	Files     []string
+}
+
+func config(opts options) (inFiles []string, outFile, pkg string) {
+	if opts.Config {
+		var assetConf assetConfig
+		toml.DecodeFile("asset-conf.toml", &assetConf)
+		for x := range assetConf.Files {
+			assetConf.Files[x] = assetConf.AssetPath + "/" + assetConf.Files[x]
+		}
+		inFiles = assetConf.Files
+		outFile = assetConf.OutFile
+		pkg = assetConf.Package
+	} else {
+		inFiles = strings.Split(opts.InFiles, ";")
+		outFile = opts.OutFile
+		pkg = opts.Package
+	}
+	return
 }

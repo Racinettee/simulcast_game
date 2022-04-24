@@ -28,25 +28,22 @@ func (player *PlayerImpl) Update(tick int) {
 	vV := float64(0)
 
 	// Move the player, and assign walking state
-	if ebi.IsKeyPressed(ebi.KeyA) {
+	switch {
+	case ebi.IsKeyPressed(ebi.KeyA):
 		hV -= 1
 		currentState = state.Walk
 		player.Dir = state.Left
-	}
-
-	if ebi.IsKeyPressed(ebi.KeyD) {
+	case ebi.IsKeyPressed(ebi.KeyD):
 		hV += 1
 		currentState = state.Walk
 		player.Dir = state.Right
 	}
-
-	if ebi.IsKeyPressed(ebi.KeyW) {
+	switch {
+	case ebi.IsKeyPressed(ebi.KeyW):
 		vV -= 1
 		currentState = state.Walk
 		player.Dir = state.Up
-	}
-
-	if ebi.IsKeyPressed(ebi.KeyS) {
+	case ebi.IsKeyPressed(ebi.KeyS):
 		vV += 1
 		currentState = state.Walk
 		player.Dir = state.Down
