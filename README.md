@@ -20,5 +20,5 @@ Simul is a new work in progress, open source game with the primary goal of emula
 - A text editor
 - go install
   - golang.org/x/tools/cmd/stringer@latest
-  - github.com/Racinettee/simulcast_game/cmd/collision_builder@latest
+  - github.com/Racinettee/collisgen@latest
 - others to potentially come...?
