@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -36,9 +37,7 @@ var {{.FileName}}Shape = map[int][]int{ {{ range $frame, $points := .Points }}
 }
 {{ end }}`
 
-type Pointi struct {
-	X, Y int
-}
+type Pointi struct{ X, Y int }
 type ByPointX []Pointi
 
 func (a ByPointX) Len() int           { return len(a) }
@@ -60,20 +59,16 @@ func main() {
 		Files:   make([]outputShape, 0),
 	}
 
-	inFiles := strings.Split(opts.InFiles, ",")
-
 	// For each file in inFiles we parse the ase file looking for a collision layer
-	for _, file := range inFiles {
+	for _, file := range strings.Split(opts.InFiles, ",") {
 		mainResult.Files = append(mainResult.Files, collectCollisionData(file)...)
 	}
 
 	t, err := template.New("shapes").Parse(outputTemplateStr)
-
 	if err != nil {
 		panic(err)
 	}
 	outFile, err := os.Create(opts.OutFile)
-
 	if err != nil {
 		panic(err)
 	}
@@ -81,27 +76,23 @@ func main() {
 }
 
 func transformTitle(title string) string {
-	caser := cases.Title(language.English)
-	str := caser.String(strings.TrimSuffix(filepath.Base(title), filepath.Ext(title)))
 	return strings.Map(func(r rune) rune {
-		switch {
-		case unicode.IsDigit(r), unicode.IsLetter(r):
+		if unicode.IsDigit(r) || unicode.IsLetter(r) {
 			return r
 		}
 		return -1
-	}, str)
+	}, cases.Title(language.English).String(strings.TrimSuffix(filepath.Base(title), filepath.Ext(title))))
 }
 
 func collectCollisionData(file string) []outputShape {
 	results := generics.NewList[outputShape](0)
 	// Load the ase file and quickly parse it for any layers that match our naming scheme
 	var aseFile asefile.AsepriteFile
-	err := aseFile.DecodeFile(file)
-	if err != nil {
+	if err := aseFile.DecodeFile(file); err != nil {
 		panic(err)
 	}
 	if len(aseFile.Frames) == 0 {
-		println("No frames in file")
+		log.Printf("No frames in %v\n", file)
 		return results
 	}
 	// Figure out which layers we care about before parsing the frames
