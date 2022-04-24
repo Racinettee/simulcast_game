@@ -1,7 +1,7 @@
 package player
 
 import (
-	comp "github.com/Racinettee/simul/pkg/component"
+	"github.com/Racinettee/simul/pkg/component/state"
 	ebi "github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
@@ -12,17 +12,17 @@ func (player *PlayerImpl) Update(tick int) {
 
 	// If player is already in the attacking state then
 	// we want to block movements or other actions being performed
-	if player.State == comp.Attack {
+	if player.State == state.Attack {
 		return
 	}
 	// Place player into attacking state
 	if inpututil.IsKeyJustPressed(ebi.KeySpace) {
-		player.State = comp.Attack
+		player.State = state.Attack
 		animationManager.Play("SpearDown")
 		return
 	}
 
-	currentState := comp.Idle
+	currentState := state.Idle
 
 	hV := float64(0)
 	vV := float64(0)
@@ -30,31 +30,31 @@ func (player *PlayerImpl) Update(tick int) {
 	// Move the player, and assign walking state
 	if ebi.IsKeyPressed(ebi.KeyA) {
 		hV -= 1
-		currentState = comp.Walk
-		player.Dir = comp.Left
+		currentState = state.Walk
+		player.Dir = state.Left
 	}
 
 	if ebi.IsKeyPressed(ebi.KeyD) {
 		hV += 1
-		currentState = comp.Walk
-		player.Dir = comp.Right
+		currentState = state.Walk
+		player.Dir = state.Right
 	}
 
 	if ebi.IsKeyPressed(ebi.KeyW) {
 		vV -= 1
-		currentState = comp.Walk
-		player.Dir = comp.Up
+		currentState = state.Walk
+		player.Dir = state.Up
 	}
 
 	if ebi.IsKeyPressed(ebi.KeyS) {
 		vV += 1
-		currentState = comp.Walk
-		player.Dir = comp.Down
+		currentState = state.Walk
+		player.Dir = state.Down
 	}
 	// Check collision with terrain objects
 	if collision := player.Body.Check(hV, vV); collision != nil {
 		hV, vV = 0, 0
-		currentState = comp.Idle
+		currentState = state.Idle
 	}
 
 	player.pos[0] += hV
@@ -65,9 +65,9 @@ func (player *PlayerImpl) Update(tick int) {
 	// Play the correct animation
 	player.State = currentState
 	switch currentState {
-	case comp.Idle:
+	case state.Idle:
 		animationManager.Play("IdleDown")
-	case comp.Walk:
+	case state.Walk:
 		animationManager.Play("WalkDown")
 	}
 }

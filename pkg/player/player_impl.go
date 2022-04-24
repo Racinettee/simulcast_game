@@ -5,6 +5,7 @@ import (
 
 	"github.com/Racinettee/simul/pkg/anim"
 	comp "github.com/Racinettee/simul/pkg/component"
+	"github.com/Racinettee/simul/pkg/component/state"
 	ebiutil "github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/solarlune/resolv"
 	"golang.org/x/image/math/f64"
@@ -30,16 +31,16 @@ func init() {
 type PlayerImpl struct {
 	pos   f64.Vec2
 	Body  *resolv.Object
-	State comp.ActorState
-	Dir   comp.Direction
+	State state.Action
+	Dir   state.Direction
 }
 
 // Positioned
 func (player *PlayerImpl) Pos() f64.Vec2 { return player.pos }
 
 func (player *PlayerImpl) SceneEnter() {
-	player.State = comp.Idle
-	player.Dir = comp.Down
+	player.State = state.Idle
+	player.Dir = state.Down
 	player.pos[0] = 50
 	player.pos[1] = 50
 	animationManager.OnAnimationExit = player.OnAnimExit()
@@ -62,7 +63,7 @@ func (player *PlayerImpl) OnAnimExit() func(anim anim.Animation) {
 	return func(anim anim.Animation) {
 		switch anim.Name {
 		case "SpearDown":
-			player.State = comp.Idle
+			player.State = state.Idle
 		case "AttackDown", "AttackUp", "AttackLeft", "AttackRight":
 			break
 		}

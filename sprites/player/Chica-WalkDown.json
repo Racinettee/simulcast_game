@@ -1,18 +1,18 @@
 { "frames": {
    "Chica-WalkDown 0.aseprite": {
-    "frame": { "x": 0, "y": 0, "w": 32, "h": 32 },
+    "frame": { "x": 0, "y": 0, "w": 17, "h": 29 },
     "rotated": false,
     "trimmed": false,
-    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 32 },
-    "sourceSize": { "w": 32, "h": 32 },
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 17, "h": 29 },
+    "sourceSize": { "w": 17, "h": 29 },
     "duration": 250
    },
    "Chica-WalkDown 1.aseprite": {
-    "frame": { "x": 32, "y": 0, "w": 32, "h": 32 },
+    "frame": { "x": 17, "y": 0, "w": 17, "h": 29 },
     "rotated": false,
     "trimmed": false,
-    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 32 },
-    "sourceSize": { "w": 32, "h": 32 },
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 17, "h": 29 },
+    "sourceSize": { "w": 17, "h": 29 },
     "duration": 250
    }
  },
@@ -21,7 +21,7 @@
   "version": "1.3-beta14-x64",
   "image": "Chica-WalkDown.png",
   "format": "RGBA8888",
-  "size": { "w": 64, "h": 32 },
+  "size": { "w": 34, "h": 29 },
   "scale": "1",
   "frameTags": [
   ],
