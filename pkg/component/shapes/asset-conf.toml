@@ -1,8 +1,10 @@
 Package = "shapes"
-AssetPath = "../../../sprites/player"
-OutFile = "chica-shapes.go"
+AssetPath = "../../../sprites"
+OutFile = "character-shapes.go"
 Files = [
-    "Chica-SpearDown.aseprite",
-    "Chica-WalkDown.aseprite",
-    "Chica-Idle-Down.aseprite"
+    "player/Chica-SpearDown.aseprite",
+    "player/Chica-WalkDown.aseprite",
+    "player/Chica-Idle-Down.aseprite",
+
+    "enemies/Gel.aseprite"
 ]

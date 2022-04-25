@@ -18,3 +18,7 @@ var ChicaIdleDown_HitBoxShape = map[int][]int{
 	3: {  0, 0, 16, 0, 16, 28, 0, 28 },
 	4: {  0, 0, 16, 0, 16, 28, 0, 28 },
 }
+
+var Gel_HitBoxShape = map[int][]int{ 
+	0: {  0, 9, 3, 4, 18, 4, 21, 9, 21, 20, 1, 20 },
+}
